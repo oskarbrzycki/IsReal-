@@ -1,0 +1,166 @@
+# Gazetteer of public persons and brands commonly impersonated in Polish scam ads.
+# Owner: W2 (text module). Names only - no photos, no page content.
+#
+# Matching rules (fakecollector/features/text.py):
+#   - aliases are matched case-insensitively on diacritic-folded text;
+#   - each alias token is stemmed (Polish inflection: "Rafała Brzoskę" -> "Rafał Brzoska");
+#   - `exact: true` aliases are matched case-sensitively as whole words, without stemming
+#     (use for short acronyms like ING, ZUS, WP that would otherwise collide with words).
+#   - `generic: true` brands are reported in `brands` but excluded from `entities`
+#     (they appear on almost every page: comment widgets, footers, payment-method lists
+#     with bank logos) to avoid noise links.
+#   - add irregular inflected forms (e.g. "Brzosce", "Dudzie") as extra aliases.
+#
+# Types: person | media | bank | brand | gov | platform
+
+persons:
+  - name: Rafał Brzoska
+    aliases: [Rafał Brzoska, Brzoska, Brzosce, Brzoską]
+  - name: Omenaa Mensah
+    aliases: [Omenaa Mensah, Omenaa]
+  - name: Robert Lewandowski
+    aliases: [Robert Lewandowski, Roberta Lewandowskiego, Robertem Lewandowskim]
+  - name: Anna Lewandowska
+    aliases: [Anna Lewandowska, Anny Lewandowskiej, Anną Lewandowską]
+  - name: Donald Tusk
+    aliases: [Donald Tusk, Tusk, Tuska, Tuskiem]
+  - name: Andrzej Duda
+    aliases: [Andrzej Duda, Andrzeja Dudy, Andrzejem Dudą, Prezydent Duda]
+  - name: Karol Nawrocki
+    aliases: [Karol Nawrocki, Nawrocki]
+  - name: Mateusz Morawiecki
+    aliases: [Mateusz Morawiecki, Morawiecki]
+  - name: Rafał Trzaskowski
+    aliases: [Rafał Trzaskowski, Trzaskowski]
+  - name: Szymon Hołownia
+    aliases: [Szymon Hołownia, Hołownia, Hołowni]
+  - name: Sławomir Mentzen
+    aliases: [Sławomir Mentzen, Mentzen]
+  - name: Jarosław Kaczyński
+    aliases: [Jarosław Kaczyński, Kaczyński]
+  - name: Andrzej Domański
+    aliases: [Andrzej Domański, Minister Domański]
+  - name: Adam Glapiński
+    aliases: [Adam Glapiński, Glapiński]
+  - name: Jerzy Owsiak
+    aliases: [Jerzy Owsiak, Owsiak]
+  - name: Kuba Wojewódzki
+    aliases: [Kuba Wojewódzki, Wojewódzki]
+  - name: Magda Gessler
+    aliases: [Magda Gessler, Gessler]
+  - name: Marcin Prokop
+    aliases: [Marcin Prokop, Prokop]
+  - name: Dorota Wellman
+    aliases: [Dorota Wellman, Wellman]
+  - name: Monika Olejnik
+    aliases: [Monika Olejnik, Olejnik]
+  - name: Piotr Kraśko
+    aliases: [Piotr Kraśko, Kraśko]
+  - name: Tomasz Lis
+    aliases: [Tomasz Lis]
+  - name: Krzysztof Ibisz
+    aliases: [Krzysztof Ibisz, Ibisz]
+  - name: Martyna Wojciechowska
+    aliases: [Martyna Wojciechowska, Wojciechowska]
+  - name: Ewa Chodakowska
+    aliases: [Ewa Chodakowska, Chodakowska]
+  - name: Iga Świątek
+    aliases: [Iga Świątek, Świątek]
+  - name: Hubert Hurkacz
+    aliases: [Hubert Hurkacz, Hurkacz]
+  - name: Michał Sołowow
+    aliases: [Michał Sołowow, Sołowow]
+  - name: Dominika Kulczyk
+    aliases: [Dominika Kulczyk]
+  - name: Sebastian Kulczyk
+    aliases: [Sebastian Kulczyk]
+  - name: Zygmunt Solorz
+    aliases: [Zygmunt Solorz, Solorz]
+  - name: Leszek Czarnecki
+    aliases: [Leszek Czarnecki]
+  - name: Krzysztof Stanowski
+    aliases: [Krzysztof Stanowski, Stanowski]
+  - name: Mariusz Pudzianowski
+    aliases: [Mariusz Pudzianowski, Pudzianowski, Pudzian]
+  - name: Adam Małysz
+    aliases: [Adam Małysz, Małysz]
+  - name: Kamil Stoch
+    aliases: [Kamil Stoch]
+  - name: Jakub Błaszczykowski
+    aliases: [Jakub Błaszczykowski, Błaszczykowski]
+  - name: Wojciech Szczęsny
+    aliases: [Wojciech Szczęsny, Szczęsny]
+  - name: Grażyna Torbicka
+    aliases: [Grażyna Torbicka, Torbicka]
+  - name: Agnieszka Chylińska
+    aliases: [Agnieszka Chylińska, Chylińska]
+  - name: Edyta Górniak
+    aliases: [Edyta Górniak, Górniak]
+  - name: Doda
+    aliases: [Dorota Rabczewska]
+  - name: Elon Musk
+    aliases: [Elon Musk, Elona Muska]
+  - name: Bill Gates
+    aliases: [Bill Gates]
+  - name: Warren Buffett
+    aliases: [Warren Buffett, Buffett]
+
+brands:
+  # media impersonated as "fake news" portals
+  - {name: Gazeta.pl, type: media, aliases: [Gazeta.pl, gazeta pl, Gazeta Wyborcza, Wyborcza]}
+  - {name: Onet, type: media, aliases: [Onet, Onet.pl]}
+  - {name: Wirtualna Polska, type: media, aliases: [Wirtualna Polska, wp.pl]}
+  - {name: WP, type: media, exact: true, aliases: [WP]}
+  - {name: Interia, type: media, aliases: [Interia, Interia.pl]}
+  - {name: TVN24, type: media, aliases: [TVN24, TVN 24]}
+  - {name: TVN, type: media, exact: true, aliases: [TVN]}
+  - {name: Polsat, type: media, aliases: [Polsat, Polsat News]}
+  - {name: TVP, type: media, exact: true, aliases: [TVP, TVP Info]}
+  - {name: Rzeczpospolita, type: media, aliases: [Rzeczpospolita, rp.pl]}
+  - {name: Business Insider, type: media, aliases: [Business Insider]}
+  - {name: Forbes, type: media, aliases: [Forbes]}
+  - {name: Fakt, type: media, aliases: [Fakt24, Fakt.pl, Dziennik Fakt]}
+  - {name: Super Express, type: media, aliases: [Super Express]}
+  - {name: money.pl, type: media, aliases: [money.pl]}
+  - {name: Bankier.pl, type: media, aliases: [Bankier.pl, Bankier]}
+  - {name: Pudelek, type: media, aliases: [Pudelek]}
+  - {name: Radio ZET, type: media, aliases: [Radio ZET]}
+  - {name: RMF FM, type: media, aliases: [RMF FM, RMF]}
+  # banks and finance
+  - {name: PKO BP, type: bank, generic: true, aliases: [PKO BP, PKO Bank Polski, iPKO]}
+  - {name: PKO, type: bank, generic: true, exact: true, aliases: [PKO]}
+  - {name: Pekao, type: bank, generic: true, aliases: [Pekao, Bank Pekao]}
+  - {name: mBank, type: bank, generic: true, aliases: [mBank]}
+  - {name: ING, type: bank, generic: true, exact: true, aliases: [ING, ING Bank Śląski]}
+  - {name: Santander, type: bank, generic: true, aliases: [Santander]}
+  - {name: Millennium, type: bank, generic: true, aliases: [Bank Millennium, Millennium]}
+  - {name: Alior, type: bank, generic: true, aliases: [Alior, Alior Bank]}
+  - {name: Revolut, type: bank, generic: true, aliases: [Revolut]}
+  - {name: BLIK, type: bank, generic: true, exact: true, aliases: [BLIK, Blik]}
+  - {name: NBP, type: gov, exact: true, aliases: [NBP, Narodowy Bank Polski, Narodowego Banku Polskiego]}
+  - {name: KNF, type: gov, exact: true, aliases: [KNF, Komisja Nadzoru Finansowego]}
+  - {name: GPW, type: gov, exact: true, aliases: [GPW, Giełda Papierów Wartościowych]}
+  - {name: ZUS, type: gov, exact: true, aliases: [ZUS]}
+  - {name: Ministerstwo Finansów, type: gov, aliases: [Ministerstwo Finansów, Ministerstwa Finansów]}
+  - {name: Rząd RP, type: gov, aliases: [Rząd RP, Kancelaria Premiera]}
+  - {name: Unia Europejska, type: gov, aliases: [Unia Europejska, Unii Europejskiej, Komisja Europejska]}
+  # companies whose brands are abused
+  - {name: InPost, type: brand, aliases: [InPost, Paczkomat, Paczkomaty]}
+  - {name: Orlen, type: brand, aliases: [Orlen, PKN Orlen]}
+  - {name: PGE, type: brand, exact: true, aliases: [PGE]}
+  - {name: PZU, type: brand, exact: true, aliases: [PZU]}
+  - {name: KGHM, type: brand, exact: true, aliases: [KGHM]}
+  - {name: Allegro, type: brand, aliases: [Allegro]}
+  - {name: Biedronka, type: brand, aliases: [Biedronka, Biedronki]}
+  - {name: Lidl, type: brand, aliases: [Lidl]}
+  - {name: Żabka, type: brand, aliases: [Żabka, Żabki]}
+  - {name: Poczta Polska, type: brand, aliases: [Poczta Polska]}
+  - {name: Facebook, type: brand, generic: true, aliases: [Facebook]}
+  - {name: Google, type: brand, generic: true, aliases: [Google]}
+  - {name: Apple, type: brand, exact: true, aliases: [Apple, App Store, AppStore]}
+  - {name: Google Play, type: brand, aliases: [Google Play]}
+  - {name: Tesla, type: brand, aliases: [Tesla]}
+  - {name: Amazon, type: brand, aliases: [Amazon]}
+  - {name: Netflix, type: brand, aliases: [Netflix]}
+  - {name: OpenAI, type: brand, aliases: [OpenAI, ChatGPT]}
+  - {name: Bitcoin, type: platform, aliases: [Bitcoin, BTC]}

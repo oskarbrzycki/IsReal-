@@ -1,0 +1,18 @@
+# W3: visual + faces. Licences in comments (see docs/LICENSES.md).
+# torch/torchvision are pinned ONLY here for the whole project (text uses them too).
+# CPU-only build (Linux/Docker) - install these two first to avoid multi-GB CUDA wheels:
+#   pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+# On Windows/macOS the PyPI wheels are already CPU-only.
+opencv-python-headless==5.1.0.95   # Apache-2.0 (YuNet/SFace via cv2.dnn, video decoding, k-means)
+Pillow==12.0.0                     # MIT-CMU (HPND)
+ImageHash==4.3.2                   # BSD-2-Clause
+# 3.3.0 is the newest release that accepts torch 2.5.1 (4.2.x requires torch>=2.6).
+# Set by W4 during the torch 2.5.1 merge - W3 to confirm the CLIP code on 3.x.
+open_clip_torch==3.3.0             # MIT; weights ViT-B-32 "openai" (MIT, OpenAI CLIP)
+torch==2.5.1                       # BSD-3-Clause (team decision; pairs with torchvision 0.20.1)
+torchvision==0.20.1                # BSD-3-Clause
+pytesseract==0.3.13                # Apache-2.0; needs Tesseract binary (Apache-2.0) + pol traineddata
+# scikit-learn comes from core.txt (single pin).
+# Models (never committed), licences checked against opencv_zoo LICENSE files:
+#   face_detection_yunet_2023mar.onnx    - MIT
+#   face_recognition_sface_2021dec.onnx  - Apache-2.0

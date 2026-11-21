@@ -1,0 +1,132 @@
+# Rule-based narrative classifier for scam pages (owner: W2, text module).
+#
+# Each pattern is a Python regex matched against lowercase, diacritic-folded text
+# ("ł"->"l", "ą"->"a", ...). Score of a type = number of distinct patterns that hit
+# the body + 2x hits in the page title. The type with the highest score wins if it
+# reaches `min_score`; ties are resolved by `priority` (earlier wins).
+# All types reaching `tag_min_score` are also returned as `narrative_tags`.
+
+min_score: 2
+tag_min_score: 2
+priority:
+  - arrest_scandal
+  - celebrity_interview
+  - conference_event
+  - health_product
+  - giveaway
+  - investment_platform
+  - fake_news_article
+
+types:
+  fake_news_article:
+    - '\bredakcj'
+    - '\bopublikowan'
+    - '\bczytaj (tez|takze|rowniez)\b'
+    - '\bkomentarz'
+    - '\budostepnij\b'
+    - '\bautor\b'
+    - '\bdziennikar'
+    - '\breporter'
+    - '\bwiadomosci\b'
+    - '\bpilne\b'
+    - '\bnajnowsze\b'
+    - '\bartykul'
+    - '\bzrodlo:'
+    - '\baktualizacja\b'
+
+  celebrity_interview:
+    - '\bwywiad'
+    - '\bw rozmowie z\b'
+    - '\bzdradzil'
+    - '\bwyznal'
+    - '\bprzyznal'
+    - '\bna antenie\b'
+    - '\bw studiu\b'
+    - '\bprowadzac'
+    - '\bemisj'
+    - '\bna zywo\b'
+    - '\bprogram(ie|u)? (telewizyjn|na zywo)'
+    - '\bgosc(iem)? programu\b'
+    - '\bsekret (swojego|jego|jej) (bogactwa|majatku|sukcesu)\b'
+
+  arrest_scandal:
+    - '\bareszt'
+    - '\bkajdank'
+    - '\bzatrzyman'
+    - '\bskandal'
+    - '\bprokurat'
+    - '\bpolicj'
+    - '\boskarz'
+    - '\bafera\b|\bafery\b|\bafere\b'
+    - '\bzamach'
+    - '\bstrzel'
+    - '\bbanki (chca|probuja|zablokowa)'
+    - '\bzakazan'
+    - '\bwyprowadzon'
+    - '\bwstrzymano emisj|przerwano (emisj|program)'
+
+  investment_platform:
+    - '\bplatform\w* (inwestycyjn|tradingow|handlow)'
+    - '\binwestyc|\binwestow'
+    - '\bzarab'
+    - '\bzarobek|\bzarobki|\bzarobil'
+    - '\bpasywn\w* dochod'
+    - '\bkryptowalut'
+    - '\bbitcoin'
+    - '\balgorytm'
+    - '\bsztuczn\w* inteligencj'
+    - '\btrading|\btrader'
+    - '\bdepozyt'
+    - '\bwyplat'
+    - '\bbroker'
+    - '\bzysk'
+    - '\bminimaln\w* (wplat|depozyt|kwot)'
+
+  conference_event:
+    - '\bkonferencj'
+    - '\bsummit\b'
+    - '\bforum\b'
+    - '\bwydarzeni'
+    - '\bbilet'
+    - '\bprelegen'
+    - '\bagenda\b'
+    - '\bwebinar'
+    - '\bszkoleni'
+    - '\bliczba miejsc\b|\bmiejsca (sa )?ograniczon'
+    - '\bzapisy\b|\brejestracja na\b'
+
+  health_product:
+    - '\bsuplement'
+    - '\bkapsulk'
+    - '\btabletk'
+    - '\bleczeni'
+    - '\bprostat'
+    - '\bstaw(y|ow|ach)\b'
+    - '\bcukrzyc'
+    - '\bodchudz|\bschudn'
+    - '\bcisnieni'
+    - '\bzdrowi'
+    - '\blekarz|\bdr\.\s'
+    - '\bskladnik'
+    - '\bdawkowani'
+    - '\bpotencj|\berekcj'
+    - '\bmetabolizm|\bmetabo'
+    - '\bpasozyt'
+    - '\bkilogram|\b\d+\s?kg\b|\bnadwag|\bwag[aiei]\b'
+    - '\bbrzuch|\btluszcz|\bdiet[aey]?\b|\bzrzuc'
+    - '\bkuracj|\bapte[kc]|\bpreparat'
+    - '\bzapaleni|\bdyskomfort|\bdolegliw|\bbol(e|u|ow)?\b'
+
+  giveaway:
+    - '\bkonkurs'
+    - '\bwygraj|\bwygran'
+    - '\bnagrod'
+    - '\bgratis\b|\bza darmo\b|\bdarmow'
+    - '\blosowani'
+    - '\bkolo fortuny\b'
+    - '\bfree ?spin|\bspin(y|ow)?\b'
+    - '\bbonus'
+    - '\bkasyn|\bcasino'
+    - '\bjackpot'
+    - '\bzakrec'
+    - '\bslot'

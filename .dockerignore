@@ -1,0 +1,31 @@
+# R1: organizer data must NEVER be baked into an image (it could be pushed to a registry).
+# data/ is mounted as a volume at runtime instead.
+data/
+**/data/raw/
+**/*.har
+**/*.mhtml
+**/*.parquet
+**/*.sqlite
+**/*_files/
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# local tooling / caches
+.git/
+.venv/
+venv/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.idea/
+.vscode/
+*.egg-info/
+
+# large local artefacts that are rebuilt or downloaded at build time
+models/
+reports/*.csv

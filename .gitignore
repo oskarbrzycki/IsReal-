@@ -1,0 +1,32 @@
+# organizer data - never commit (NASK rules: no public distribution)
+data/
+# external test sets (e.g. PhreshPhish, docs/EXTERNAL_TEST.md) - never commit
+data_ext/
+*.zip
+*.mhtml
+
+# secrets
+.env
+*.key
+
+# python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# models / caches
+models/
+.cache/
+*.onnx
+*.pt
+
+# os / ide
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# machine-readable evaluation numbers (the markdown reports are committed, the .json are local)
+reports/*.json

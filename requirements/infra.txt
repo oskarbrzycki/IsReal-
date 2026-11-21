@@ -1,0 +1,6 @@
+# W4: infra module. Offline parsing + optional public OSINT lookups.
+# Licences (see docs/LICENSES.md): all permissive, no API keys required.
+# tldextract is pinned in ingest.txt (single pin for the project).
+mmh3==5.0.1            # MIT - MurmurHash3 for Shodan-style favicon hashes
+dnspython==2.7.0       # ISC - DNS A/NS/MX lookups (online mode only)
+requests==2.32.3       # Apache-2.0 - RDAP / crt.sh HTTP calls (online mode only)

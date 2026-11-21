@@ -1,0 +1,10 @@
+# Working ground-truth campaigns for evaluation (hypothesis from data inventory).
+# Status: UNCONFIRMED - waiting for NASK mentors. Owner: W5.
+campaigns:
+  A: ["nask:1", "nask:2", "nask:3"]   # shared FB pixel, 16 identical files, shared HAR domain
+  B: ["nask:48", "nask:61"]           # 8 identical assets, same title
+singletons: ["nask:5", "nask:10", "nask:14", "nask:36", "nask:47"]
+# Family level (CONTRACTS 6.4): campaigns of one kit/actor. HYPOTHESIS from W4's report
+# (shared URL-parameter template and CSS kit). Status: UNCONFIRMED - to verify with NASK mentors.
+families:
+  F1: ["nask:1", "nask:2", "nask:3", "nask:48", "nask:61"]

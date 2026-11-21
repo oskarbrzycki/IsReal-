@@ -1,0 +1,175 @@
+# Face reference clusters (owner: W3 generates, leader names).
+# Type the person's full name in `name` after reviewing data/interim/faces_review/<id>.jpg.
+# Names only - no photos or embeddings in git. Ids survive rebuilds (centroid matching).
+# name: noise = blurred/cropped background faces, never used as identity.
+# Single-face clusters are not listed: they never yield an identity.
+clusters:
+  P001:
+    name: Rafał Brzoska
+    faces: 10
+    incidents:
+    - nask:1
+    - nask:2
+    - nask:48
+  P002:
+    name: Mateusz Morawiecki
+    faces: 10
+    incidents:
+    - nask:1
+    - nask:2
+    - nask:48
+  P005:
+    name: Monika Olejnik
+    faces: 5
+    incidents:
+    - nask:10
+    - nask:3
+  P006:
+    name: null
+    faces: 4
+    incidents:
+    - nask:1
+    - nask:2
+  P004:
+    name: Anita Werner
+    faces: 4
+    incidents:
+    - nask:48
+    - nask:61
+  P007:
+    name: null
+    faces: 3
+    incidents:
+    - nask:3
+    - nask:61
+  P008:
+    name: null
+    faces: 3
+    incidents:
+    - nask:48
+    - nask:61
+  P009:
+    name: null
+    faces: 2
+    incidents:
+    - nask:1
+    - nask:2
+  P010:
+    name: null
+    faces: 2
+    incidents:
+    - nask:1
+    - nask:2
+  P003:
+    name: noise
+    faces: 2
+    incidents:
+    - nask:1
+    - nask:2
+  P014:
+    name: noise
+    faces: 2
+    incidents:
+    - nask:3
+    - nask:61
+  P015:
+    name: null
+    faces: 2
+    incidents:
+    - nask:48
+    - nask:61
+  P017:
+    name: null
+    faces: 12
+    incidents:
+    - nask:47
+  P018:
+    name: null
+    faces: 11
+    incidents:
+    - nask:10
+  P019:
+    name: null
+    faces: 10
+    incidents:
+    - nask:48
+  P020:
+    name: null
+    faces: 9
+    incidents:
+    - nask:5
+  P021:
+    name: null
+    faces: 8
+    incidents:
+    - nask:14
+  P022:
+    name: null
+    faces: 5
+    incidents:
+    - nask:14
+  P023:
+    name: null
+    faces: 5
+    incidents:
+    - nask:14
+  P024:
+    name: null
+    faces: 4
+    incidents:
+    - nask:3
+  P025:
+    name: null
+    faces: 4
+    incidents:
+    - nask:61
+  P026:
+    name: null
+    faces: 3
+    incidents:
+    - nask:48
+  P027:
+    name: null
+    faces: 3
+    incidents:
+    - nask:61
+  P031:
+    name: null
+    faces: 2
+    incidents:
+    - nask:3
+  P028:
+    name: null
+    faces: 2
+    incidents:
+    - nask:14
+  P029:
+    name: null
+    faces: 2
+    incidents:
+    - nask:14
+  P032:
+    name: null
+    faces: 2
+    incidents:
+    - nask:48
+  P033:
+    name: null
+    faces: 2
+    incidents:
+    - nask:48
+  P066:
+    name: null
+    faces: 2
+    incidents:
+    - nask:61
+  P035:
+    name: null
+    faces: 2
+    incidents:
+    - nask:61
+  P036:
+    name: null
+    faces: 2
+    incidents:
+    - nask:61

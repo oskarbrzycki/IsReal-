@@ -1,0 +1,17 @@
+# IsReal? — moduł text: metodyka (do włączenia w METHODOLOGY.md)
+
+**Wejście.** Materiały `html`, `mhtml` i `json` (metadane reklamy i zrzutu strony), parsowane wyłącznie statycznie, bez JS i bez sieci. Do tego tekst OCR obrazów i klatek wideo z modułu visual: osobne rekordy dla `image`, `video` i `asset`. Z HTML bierzemy tylko tekst **widoczny**: bez skryptów i stylów, bez elementów ukrytych (`display:none`, `hidden`, `aria-hidden`), za to z tytułem, opisem i tekstami przycisków. Tagi `<embed>`/`<object>` są rozpakowywane, a nie usuwane: na jednej stronie (incydent 14) parser zagnieżdżał w nieotwartym `<embed>` całą treść i stracilibyśmy cały tekst.
+
+**Cechy.** Język (langdetect); 15 słów kluczowych (TF-IDF z IDF liczonym na korpusie incydentów); encje z gazetteera `config/reference/entities.yaml` (osoby publiczne, media, instytucje, marki; dopasowanie odporne na odmianę polską); nazwa „platformy” lub produktu (heurystyki: słowa „platforma/system/aplikacja” + nazwa własna, tytuł produktowy, przyciski CTA, liczba wzmianek, łączenie odmian); typ narracji (reguły `narratives.yaml`, 8 typów); frazy CTA; obiecane kwoty z okresem (`/day`, `/month`); MinHash (128 permutacji, 5-gramy słów); embedding `intfloat/multilingual-e5-small` (384 wymiary, CPU).
+
+**Sygnały i klasy.** Klasa *campaign* to twardy dowód w regule twardych dowodów (W5), a klasa *family* łączy tylko w rodzinę. Wartości zmierzone na 45 parach incydentów:
+
+| Sygnał | Typ | Klasa | Floor | Uzasadnienie z tabeli par |
+|---|---|---|---|---|
+| `text_near_dup` | jaccard_minhash | campaign | — | łączy tylko pary z identycznym tekstem (1–2: 0,98), pozostałe pary ≈ 0 |
+| `same_platform_name` | exact | campaign | — | nazwa „pakietu” wspólna dla 1–2–3; poza kampanią A nie łączy żadnej pary |
+| `text_semantic` | cosine | family | 0,85 | e5 daje **każdej** parze polskich stron-scamów 0,77–0,84 (bez floor łączy 100% par); po floor zostaje 24% par, najsilniejsze w obrębie kampanii (1–2, 48–61) |
+| `shared_entities` | set_overlap | family | 0,2 | jedna wspólna encja daje ok. 0,15 (szum); po floor zostają 4 pary |
+| `same_narrative` | exact | family | — | 9% par; typ narracji opisuje rodzinę, nie kampanię; „other” i brak typu **nie** dają dopasowania (pole `narrative_key`) |
+
+**Decyzje.** (1) Banki, BLIK, Facebook i Google są w `brands`, ale **poza** `entities`: występują na prawie każdej stronie (listy metod płatności, widżety komentarzy) i bez tego wykluczenia `shared_entities` łączył wszystkie strony inwestycyjne. (2) Wizerunki osób i logotypy mediów są sygnałem rodziny: te same osoby wracają w różnych kampaniach. (3) Między wariantami kampanii tekst bywa przepisywany (48–61: near-dup 0,01, semantyka 0,94). Dlatego near-dup jest wąski i pewny, a semantyka szeroka i ograniczona przez floor. (4) **Rekordy OCR** (tekst z obrazów i klatek wideo) liczą tylko `text_near_dup` i `shared_entities`. Pola dla `text_semantic`, `same_narrative` i `same_platform_name` są w nich puste. W przebiegu referencyjnym W3 krótki, zaszumiony tekst OCR dawał `text_semantic` dla 82% par mimo floor 0,85, `same_narrative` dla 100% par (wszędzie „other”) i przypadkowe „nazwy platform”. **Weryfikacja po zmianie** (tabela par OCR w raporcie W3): szum zniknął. `same_narrative` i `text_semantic` są dla OCR wyłączone, a `text_near_dup` łączy tylko pary 1–2 i 48–61, obie z wartością 1,0. `shared_entities` w OCR łączy 1 parę, więc floor 0,2 zostaje bez zmian. Temat zamknięty.

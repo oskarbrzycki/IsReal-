@@ -1,0 +1,8 @@
+# Files executed inside Linux containers / CI must keep LF even on Windows checkouts
+# (core.autocrlf=true would otherwise hand Docker a CRLF build context).
+Dockerfile          text eol=lf
+docker-compose.yml  text eol=lf
+.dockerignore       text eol=lf
+docker/**           text eol=lf
+.github/**          text eol=lf
+*.sh                text eol=lf

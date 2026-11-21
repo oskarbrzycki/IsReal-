@@ -1,0 +1,70 @@
+# FakeCollector / Follow the Fake (owner W4)
+#
+#   docker compose build                                   # one image for app + pipeline
+#   docker compose up app                                  # UI -> http://localhost:8501
+#   docker compose --profile pipeline run --rm pipeline    # ingest -> features -> correlate
+#   docker compose --profile graph up neo4j                # optional graph DB on :7474
+#
+# Data: put the organizer's package in ./data/raw/nask/<N>/ on the host. It is mounted,
+# never copied into the image (.dockerignore excludes data/).
+name: fakecollector
+
+x-fakecollector: &fakecollector
+  build:
+    context: .
+  image: fakecollector:latest
+  env_file:
+    - path: .env
+      required: false
+  # `environment` wins over `env_file`: container paths are pinned here so a local .env
+  # (empty MODELS_DIR=, a Windows TESSERACT_CMD) can never point the container elsewhere.
+  environment:
+    OFFLINE: ${OFFLINE:-true}          # true = OSINT answers only from data/cache (demo default)
+    DATA_DIR: /app/data
+    MODELS_DIR: /models                # models baked into the image at build time
+    HF_HOME: /models/hf
+    TESSERACT_CMD: /usr/bin/tesseract
+  volumes:
+    - ./data:/app/data
+  # Run as the host user so files written to ./data are not owned by root (Linux hosts).
+  user: "${UID:-1000}:${GID:-1000}"
+
+services:
+  app:
+    <<: *fakecollector
+    ports:
+      - "127.0.0.1:8501:8501"
+    restart: unless-stopped
+
+  pipeline:
+    <<: *fakecollector
+    profiles: ["pipeline"]
+    # OFFLINE=false -> features --online (RDAP / DNS / crt.sh, public services only).
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        if [ "$${OFFLINE}" = "false" ]; then MODE=--online; else MODE=--offline; fi
+        echo "pipeline: ingest -> features ($${MODE}) -> correlate"
+        python -m fakecollector ingest --data data/raw/nask
+        python -m fakecollector features --module all "$${MODE}"
+        python -m fakecollector correlate
+    restart: "no"
+
+  neo4j:
+    image: neo4j:5.26-community
+    profiles: ["graph"]
+    ports:
+      - "127.0.0.1:7474:7474"   # browser
+      - "127.0.0.1:7687:7687"   # bolt
+    environment:
+      # Local demo only. Override in .env: NEO4J_PASSWORD=...
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-fakecollector-demo}
+    volumes:
+      - ./data/graph/neo4j:/import:ro   # CSV exported by `python -m fakecollector correlate`
+      - neo4j-data:/data
+    restart: unless-stopped
+
+volumes:
+  neo4j-data:

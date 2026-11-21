@@ -1,0 +1,107 @@
+# CI (owner W4): dependency install + tests on 3.11/3.12, and the Docker image build.
+# The organizer's data is not in the repo, so every test that needs it is skipped here.
+name: ci
+
+on:
+  push:
+    branches: [main, feature/infra]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: pip install + pytest (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements/*.txt
+
+      - name: System packages (Tesseract + Polish)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-pol
+
+      - name: CPU-only torch (pin read from requirements/visual.txt)
+        run: |
+          TORCH_PINS="$(grep -E '^(torch|torchvision)==' requirements/visual.txt | awk '{print $1}')"
+          echo "installing: ${TORCH_PINS}"
+          pip install ${TORCH_PINS} --index-url https://download.pytorch.org/whl/cpu
+
+      - name: pip install -r requirements.txt -r requirements/dev.txt
+        run: pip install -r requirements.txt -r requirements/dev.txt
+
+      - name: pip check (no broken dependency)
+        run: pip check
+
+      - name: pytest (data-dependent tests skip without data/raw/nask)
+        env:
+          OFFLINE: "true"
+          TEXT_EMB_DISABLED: "1"
+        run: python -m pytest -q -rs
+
+  docker:
+    name: docker build + smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space (torch + models make a large image)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: docker build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: fakecollector:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test - imports, CLI, models, OCR, no data baked in
+        run: |
+          docker run --rm fakecollector:ci python -c "import fakecollector, torch, cv2, open_clip, sentence_transformers, streamlit; print('imports ok, torch', torch.__version__)"
+          docker run --rm fakecollector:ci python -m fakecollector --help
+          docker run --rm fakecollector:ci sh -c 'ls -la /models && test -f /models/face_detection_yunet_2023mar.onnx && test -f /models/face_recognition_sface_2021dec.onnx && test -d /models/open_clip && test -d /models/hf'
+          docker run --rm fakecollector:ci sh -c 'tesseract --list-langs | grep -qx pol && echo "tesseract pol ok"'
+          docker run --rm fakecollector:ci sh -c 'test ! -e /app/data/raw && echo "no organizer data in image"'
+
+      - name: Models resolve via MODELS_DIR (no settings.yaml patch)
+        run: |
+          docker run --rm fakecollector:ci python -c "from fakecollector.core.config import make_context; from fakecollector.features import _media; d = _media.models_dir(make_context()); assert str(d) == '/models', d; print('models_dir =', d)"
+
+      - name: docker compose config is valid
+        run: docker compose config --quiet
+
+      - name: Compose pins container paths even with a hostile local .env
+        run: |
+          docker tag fakecollector:ci fakecollector:latest
+          # what a developer may copy from .env.example on Windows
+          printf 'MODELS_DIR=\nDATA_DIR=./data\nTESSERACT_CMD=C:\\Program Files\\Tesseract-OCR\\tesseract.exe\n' > .env
+          docker compose run --rm --no-deps app python -c "import os; from fakecollector.core.config import make_context; from fakecollector.features import _media; d = _media.models_dir(make_context()); assert str(d) == '/models', d; assert os.environ['TESSERACT_CMD'] == '/usr/bin/tesseract', os.environ['TESSERACT_CMD']; print('compose paths ok:', d)"
+          rm -f .env

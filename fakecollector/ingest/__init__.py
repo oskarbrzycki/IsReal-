@@ -1,0 +1,1 @@
+"""FakeCollector package."""

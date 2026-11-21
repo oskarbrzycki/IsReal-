@@ -1,0 +1,9 @@
+# Runtime dependencies. Each package is pinned in exactly one requirements/<module>.txt.
+# Linux/Docker: install CPU torch first, see requirements/visual.txt.
+# Tests: additionally  pip install -r requirements/dev.txt
+-r requirements/core.txt
+-r requirements/ingest.txt
+-r requirements/text.txt
+-r requirements/visual.txt
+-r requirements/infra.txt
+-r requirements/ui.txt

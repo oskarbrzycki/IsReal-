@@ -1,0 +1,14 @@
+# Streamlit settings for the demo UI (W1). No secrets here.
+[client]
+toolbarMode = "viewer"        # hide "Deploy" / developer menu in the demo
+
+[browser]
+gatherUsageStats = false      # no telemetry from the demo machine
+
+[server]
+address = "localhost"        # listen on this machine only - not visible from the event network
+headless = true
+maxUploadSize = 600           # MB; a captured page with video can be large
+
+[theme]
+primaryColor = "#c0392b"

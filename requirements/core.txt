@@ -1,0 +1,10 @@
+# W5: core types, engine, eval. Licences in comments (see docs/LICENSES.md).
+# Each package is pinned in exactly ONE requirements/*.txt file (integration rule, W4).
+pyyaml==6.0.2           # MIT
+pandas==2.2.3           # BSD-3-Clause
+pyarrow==18.1.0         # Apache-2.0
+numpy==2.1.3            # BSD-3-Clause
+networkx==3.4.2         # BSD-3-Clause (graph, Louvain)
+scikit-learn==1.5.2     # BSD-3-Clause (engine weights, HDBSCAN; also used by W3 face_ref)
+datasketch==1.6.5       # MIT (MinHash / LSH)
+python-dotenv==1.0.1    # BSD-3-Clause (.env loading)

@@ -1,0 +1,64 @@
+# Common resources that must NOT create "shared element" links between incidents.
+# Owner: W4. Everyone may append (via PR). A specific tracker/pixel ID is still a valid signal.
+#
+# Rule of thumb: stop-list a host only when *anyone* could use it. A scammer's
+# own subdomain on free hosting (<name>.netlify.app, a <zone>.b-cdn.net stream
+# zone) is distinctive, so the generic parent is listed instead where the
+# public-suffix list already splits them apart.
+filenames:            # case-insensitive substring match on asset file name
+  - jquery
+  - fbevents
+  - gtm.js
+  - analytics.js
+  - bootstrap
+  - saved_resource
+  - lazysizes
+  - font-awesome
+  - all.min.css
+  - swiper
+  - embla-carousel
+  - cleardot.gif
+  - email-decode.min.js
+sha1:                 # full sha1 of common files (list from W1, verified by W4 on the data)
+  - 0a348c4b61c961aba7618f909beb87f740a81983   # empty saved_resource.html, 149 B (10, 14, 36)
+  - e6349d730bb26b4bd4a485cf72b09d7b114f95b9   # fbevents.js (1, 2, 3)
+  - 024e75a958121d6d9b6513d4d9e4316d4c10e25d   # fbevents.js, other build (10)
+  - 7868c318aa8ebcfc072e133a8d5b87f0f7773652   # fbevents.js, other build (48)
+  - b82d238d4e31fdf618bae8ac11a6c812c03dd0d4   # jQuery 3.6.0 min (14, 47)
+  - ee48592d1fff952fcf06ce0b666ed4785493afdc   # jQuery min (3)
+  # NOT stop-listed on purpose - these are evidence, not noise:
+  #   d353cdd9... main.css shared by 1, 2, 61 (template kit -> family signal)
+  #   f2af25f6... FB pixel config file shared by 1, 2 (concrete pixel -> campaign signal)
+domains:              # eTLD+1 of generic CDNs / trackers / big platforms
+  # social + tag managers
+  - facebook.net
+  - facebook.com
+  - fbcdn.net
+  - google-analytics.com
+  - googletagmanager.com
+  - doubleclick.net
+  - analytics.tiktok.com
+  # Google properties seen as page/document hosts in the samples (maps embed,
+  # translate widget, ad conversion beacons) - never the scam's own landing
+  - google.com
+  - google.pl
+  - gstatic.com
+  - googleapis.com
+  - googleadservices.com
+  - youtube.com
+  - ytimg.com
+  # generic CDNs / package mirrors
+  - cloudflare.com
+  - cdnjs.cloudflare.com
+  - jsdelivr.net
+  - unpkg.com
+  - jquery.com
+  - bootstrapcdn.com
+  - fontawesome.com
+  - b-cdn.net            # BunnyCDN: the stream-zone subdomain is the real signal
+  # generic stock media / public APIs
+  - unsplash.com
+  - pexels.com
+  - er-api.com           # open.er-api.com, public FX rates used by one landing
+  - gravatar.com
+  - w3.org

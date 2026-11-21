@@ -1,0 +1,11 @@
+# W2: text module. Licences in comments (see docs/LICENSES.md).
+# Also uses packages pinned elsewhere (never re-pin them here):
+#   beautifulsoup4, lxml (ingest.txt); datasketch, numpy, pandas, pyarrow, pyyaml (core.txt);
+#   torch (visual.txt) - sentence-transformers works with the torch pinned there.
+langdetect==1.0.9             # Apache-2.0 - language detection
+
+# Embeddings: model intfloat/multilingual-e5-small (MIT), downloaded once from Hugging Face
+# (Docker: baked into /models/hf at build time). Module still works without it
+# (text_emb = None); disable explicitly with TEXT_EMB_DISABLED=1.
+sentence-transformers==3.3.1  # Apache-2.0
+transformers==4.46.3          # Apache-2.0

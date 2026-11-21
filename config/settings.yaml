@@ -1,0 +1,88 @@
+# Global settings. No secrets here (use .env). Owner: W5.
+paths:
+  raw: data/raw/nask
+  interim: data/interim
+  features: data/features
+  graph: data/graph
+  cache: data/cache
+  models: data/models     # downloaded model files (YuNet/SFace, CLIP); env MODELS_DIR overrides
+offline: true
+video:
+  max_frames: 12          # frames sampled per video
+  every_s: 5
+engine:
+  tau_campaign: 0.5       # campaign level: min score (class "campaign" signals) to draw an edge
+  tau_family: 0.38        # family level: min score (class "family" signals) to link two campaigns.
+                          # Plateau 0.34-0.42 on the full feature set (was 0.45 on partial features)
+  tau_new: 0.35           # assign(): campaign-level score below this -> "new campaign"
+  tau_store: 0.2          # edges below this are not stored at all
+  tau_dup: 0.95           # edge score treated as "duplicate" (same message, other copy)
+  min_signals: 2          # campaign edge: >= 1 hard identifier OR this many distinct campaign signals with sim > 0
+  min_signals_family: 2   # ... and this many family-class signals (one generic signal must not link families)
+  hard_identifiers:       # a match on any of these alone is enough for a campaign edge (CONTRACTS 6.4)
+    - shared_trackers
+    - shared_har_trackers
+    - shared_ad_account
+    - same_registered_domain
+    - shared_assets
+  family_positive_only: true  # family level: a signal below its own floor = missing, not a 0 in the mean (weak
+                          # evidence must not lower a score). Campaign level unchanged. See METHODOLOGY section 3.
+  absence_discount: 0.5   # weight factor for identifier signals (set/exact) with NO overlap: weak evidence against
+                          # (1.0 = plain contract formula). Chosen in the middle of a stable plateau on the 10 samples.
+  default_weight: 1.0     # weight for signals not listed below
+  all_pairs_max: 200      # up to this many incidents every pair is scored; above: blocking
+  cluster_method: louvain # louvain | hdbscan
+  louvain_resolution: 1.0
+  seed: 42
+  top_k: 5                # neighbours returned by assign()
+  weights:                # starting weights, tuned later
+    shared_trackers: 3.0
+    shared_har_trackers: 3.5        # W4 report
+    shared_assets: 3.0
+    same_registered_domain: 3.0
+    shared_form_endpoint: 2.5
+    face_match: 2.0
+    same_identity: 2.0
+    same_platform_name: 2.0
+    image_near_dup: 2.0
+    text_near_dup: 2.0
+    dom_template: 1.5
+    shared_scripts: 1.5
+    shared_logo: 1.5
+    same_favicon: 1.5
+    shared_redirector: 1.5
+    shared_registrar_and_date: 2.0  # W4 report
+    cert_san_overlap: 1.5
+    shared_ns: 1.0
+    shared_ip_asn: 1.0
+    same_narrative: 1.0
+    hidden_text_sim: 1.0
+    text_semantic: 1.0
+    visual_style: 0.8
+    shared_entities: 0.8
+    shared_ad_account: 3.0          # W5 value, accepted by W4
+    same_param_template: 1.5        # W4 report
+    same_adtech_stack: 2.0          # W4 report
+    shared_server_stack: 0.5        # agreed with W4
+  # Signal class overrides (campaign = evidence of ONE campaign; family = same kit/actor/theme).
+  # Modules declare SIGNAL_CLASS themselves (default campaign); entries here win over that.
+  signal_class:
+    dom_template: family
+    same_param_template: family
+    same_adtech_stack: family
+    shared_server_stack: family
+    visual_style: family
+    face_match: family
+    same_identity: family
+    text_semantic: family
+    same_narrative: family
+    shared_entities: family
+  # Per-signal overrides merged into the signal specs declared by feature modules.
+  # `floor`: similarity at/below which the signal counts as 0 (rescales cosine/hamming, whose
+  # random baseline is far above 0). Tune on real data.
+  signal_params:
+    shared_assets: {metric: count, saturate: 4}   # identical custom files are rare: count them, not their share
+    # text_semantic / face_match: floors are owned by W2 (0.85) and W3 (0.50) in their modules - not overridden here
+    # (modules may declare their own floor; entries in this section would win)
+    visual_style: {floor: 0.85}      # W3 measurement: at 0.7 it linked 40% of all pairs
+    # NOTE: face_match is deliberately NOT overridden here - W3 owns its floor (0.50 in faces.py)
