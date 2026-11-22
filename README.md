@@ -16,6 +16,50 @@ np. „wspólny piksel FB”, „domeny zarejestrowane w odstępie 108 s” albo
 
 ---
 
+## Uruchomienie na własnych danych
+
+Chcesz sprawdzić narzędzie na **swoich** zgłoszeniach? Nazwy folderów mogą być dowolne
+(`zgloszenie_A`, `case 2`, `47-kopia`, polskie znaki), nie trzeba nic zmieniać w kodzie ani w konfiguracji.
+Zgłoszenie może mieć zagnieżdżone podfoldery. Pliki, których nie da się rozpoznać (pusty plik, uszkodzony zip,
+samo `.txt`), są **pomijane z ostrzeżeniem**, a pozostałe zgłoszenia przechodzą dalej bez przerwy.
+
+**a) Docker** (zalecane, modele są już w obrazie):
+
+```bash
+# dane: data/raw/nask/<dowolna_nazwa_zgłoszenia>/   (jeden folder = jedno zgłoszenie)
+docker compose build && docker compose --profile pipeline run --rm pipeline && docker compose up app
+```
+
+Katalog `./data` na hoście jest montowany w kontenerze jako `/app/data`. Aby użyć innego miejsca, zmień
+ścieżkę wolumenu `./data` w `docker-compose.yml`.
+
+**b) pip** (Python 3.11 lub 3.12, po instalacji z sekcji niżej): jedna komenda wykonuje ingest, features,
+correlate i evaluate:
+
+```bash
+python scripts/reference_run.py --data <folder_ze_zgłoszeniami>
+# wyniki trafiają do data/ albo do katalogu z DATA_DIR, np.:  DATA_DIR=/ścieżka/data_jury python scripts/reference_run.py --data ...
+```
+
+Bez `--data` skrypt bierze `data/raw/nask` (albo `DATA_DIR/raw/nask`). To samo krok po kroku:
+`python -m fakecollector ingest --data <folder>`, potem `features --module all`, `correlate`, `evaluate`.
+Bez naszych etykiet `evaluate` zapisuje raport z adnotacją „Brak etykiet: metryki pominięte”.
+
+**c) Gdzie jest wynik:**
+- interfejs: `streamlit run ui/app.py` (w Dockerze `docker compose up app`), czyli **http://localhost:8501**;
+- `data/graph/clusters.json` (kampanie i rodziny) oraz `data/graph/edges.parquet` (krawędzie z przesłankami);
+- raport kampanii w **JSON i CSV** (przyciski „Pobierz raport kampanii” w zakładce „Kampanie i rodziny”);
+- `reports/eval_<data>.md` oraz `reports/reference_run_<data>.md` (przebieg i czasy).
+
+**d) Tryb online (opcjonalnie).** Domyślnie wszystko działa offline. Flaga `--online` pobiera **świeże** dane
+RDAP, DNS i crt.sh dla nowych domen (bez kluczy API): `python -m fakecollector features --module all --online`,
+`python scripts/reference_run.py --online` albo w Dockerze `OFFLINE=false docker compose --profile pipeline run --rm pipeline`.
+
+**e) Czas.** Pierwsze uruchomienie bez Dockera pobiera ok. **1,1 GB** modeli (w Dockerze są już w obrazie).
+Dalej ok. **1 do 2 s na zgłoszenie** bez wideo.
+
+---
+
 ## Szybki start (Docker — zalecane)
 
 Wymagania: Docker z Compose v2.

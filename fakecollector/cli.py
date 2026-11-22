@@ -55,6 +55,10 @@ def cmd_ingest(args: argparse.Namespace) -> int:
     from fakecollector.ingest.loader import load_incidents, load_upload, write_jsonl
 
     data = Path(args.data) if args.data else _config_path("raw")      # explicit argument wins over config
+    if not data.exists():
+        print(f"ingest: nie znaleziono {data}. Połóż dane w data/raw/nask/<nazwa_zgłoszenia>/ "
+              "(lub ustaw DATA_DIR / podaj --data).", file=sys.stderr)
+        return 2
     if data.is_dir() and not args.upload:
         incidents = load_incidents(data, source=args.source)
     else:  # single folder / file / zip -> one "upload" incident
@@ -111,6 +115,9 @@ def cmd_correlate(args: argparse.Namespace) -> int:
 
 
 def cmd_analyze(args: argparse.Namespace) -> int:
+    if not args.path.lower().startswith(("http://", "https://")) and not Path(args.path).exists():
+        print(f"analyze: nie znaleziono {args.path}", file=sys.stderr)
+        return 2
     return _engine_call("analyze", args.path)
 
 

@@ -1,4 +1,4 @@
-"""Streamlit demo: "IsReal? — od pojedynczej reklamy do całej kampanii oszustów". Owner: W1.
+"""Streamlit demo: "IsReal? Od pojedynczej reklamy do całej kampanii oszustów". Owner: W1.
 
 The UI only READS engine outputs (data/graph/*, data/features/*.parquet, data/interim/incidents.jsonl,
 reports/eval_*.md) and calls fakecollector.engine.api (correlate, analyze). No correlation logic here.
@@ -31,7 +31,8 @@ if str(REPO_ROOT) not in sys.path:
 from fakecollector.core.config import make_context, resolve_path  # noqa: E402
 from fakecollector.ingest.util import etld1  # noqa: E402
 
-TITLE = "IsReal? — od pojedynczej reklamy do całej kampanii oszustów"
+ASSETS = Path(__file__).resolve().parent / "assets"
+TITLE = "IsReal? Od pojedynczej reklamy do całej kampanii oszustów"
 RULE_SIGNAL = "regula_kampanii"
 RULE_TEXT = "za mało twardych dowodów na tę samą kampanię"
 MODULES = ["html_struct", "text", "visual", "faces", "infra"]
@@ -43,15 +44,15 @@ STATUS_TEXT = {
     "new_family": "Nowa kampania",
     "insufficient_data": "Za mało danych",
 }
-STATUS_ICON = {"known_campaign": "🎯", "new_campaign_known_family": "🧬", "new_family": "🆕",
-               "insufficient_data": "❔"}
+STATUS_ICON = {"known_campaign": "", "new_campaign_known_family": "", "new_family": "",
+               "insufficient_data": ""}       # plain text status (no emoji): calmer, jury-friendly look
 UPLOAD_TYPES = ["zip", "html", "htm", "mhtml", "png", "jpg", "jpeg", "webp", "gif"]
 PALETTE = ["#4e79a7", "#f28e2b", "#59a14f", "#e15759", "#76b7b2", "#edc948", "#b07aa1", "#ff9da7",
            "#9c755f", "#bab0ac", "#86bcb6", "#d37295", "#8cd17d", "#b6992d", "#499894", "#79706e"]
 # Vector / bulky feature columns: summarised, never dumped
 BULKY_HINTS = ("emb", "minhash", "shingles", "phash", "dhash", "vector", "frames")
 
-st.set_page_config(page_title="IsReal?", page_icon="🕵️", layout="wide")
+st.set_page_config(page_title="IsReal?", page_icon=str(ASSETS / "icon.png"), layout="wide")
 
 
 # =============================================================== safety helpers
@@ -75,13 +76,56 @@ SHORT_ID_RE = re.compile(r"\b[0-9a-f]{3,}…([0-9a-f]{4})\b", re.I)
 
 # Presentation mode (toggle next to the public one): bigger type for the projector, "brak: ..." rows hidden.
 PRESENT = {"on": False, "hide_missing": False}
+BASE_CSS = """<style>
+:root { --bg:#0c0d10; --panel:#13151a; --panel2:#181b21; --line:#24272e; --ink:#f5f5f4; --muted:#9a9ca4;
+  --dim:#5a5c63; --red:#e5484d; }
+html, body, .stApp, [data-testid="stAppViewContainer"] { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+  "Inter", "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+.block-container { max-width: 1200px; padding-top: 5rem; padding-bottom: 4rem; }
+[data-testid="stHeader"] { background: rgba(12,13,16,.85); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+[data-testid="stHeader"] img { height: 1.7rem; }
+h1, h2, h3 { color: var(--ink); letter-spacing: -0.025em; font-weight: 600 !important; }
+h1 { font-size: 2.05rem !important; line-height: 1.1 !important; padding: 0 0 .4rem !important; }
+h2 { font-size: 1.45rem !important; margin-top: 2rem !important; }
+h3 { font-size: 1.1rem !important; margin-top: 1.4rem !important; }
+[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p { color: var(--muted) !important; }
+hr { border-color: var(--line) !important; margin: 1.6rem 0 !important; }
+a { color: var(--ink); text-decoration-color: var(--red); }
+[data-testid="stMetric"] { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.2rem; }
+.st-key-hero_metric [data-testid="stMetric"] { border-color: var(--red); background: var(--panel2); }
+[data-testid="stMetricLabel"] p { color: var(--muted) !important; font-size: .8rem !important; font-weight: 500; }
+[data-testid="stMetricValue"] { font-weight: 600; letter-spacing: -0.03em; }
+[data-testid="stExpander"] { background: var(--panel); border: 1px solid var(--line) !important; border-radius: 10px; }
+[data-testid="stExpander"] summary:hover { color: var(--ink); }
+[data-testid="stDataFrame"], [data-testid="stTable"] { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+[data-testid="stSidebar"] { background: var(--bg); border-right: 1px solid var(--line); }
+[data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { font-size: .8rem !important; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); font-weight: 500 !important; }
+[data-testid="stButtonGroup"] button[role="radio"] { background: transparent !important; border-color: var(--line) !important; }
+[data-testid="stButtonGroup"] button[role="radio"] * { color: var(--muted) !important; }
+[data-testid="stButtonGroup"] button[role="radio"]:hover * { color: var(--ink) !important; }
+[data-testid="stButtonGroup"] button[aria-checked="true"] { background: var(--panel2) !important; box-shadow: inset 0 -2px 0 var(--red); }
+[data-testid="stButtonGroup"] button[aria-checked="true"] * { color: var(--ink) !important; font-weight: 600; }
+.stButton > button, .stDownloadButton > button { border-radius: 8px; border: 1px solid var(--line); background: var(--panel2);
+  color: var(--ink); font-weight: 500; transition: border-color .15s, background .15s; }
+.stButton > button:hover, .stDownloadButton > button:hover { border-color: var(--dim); background: #1e2128; color: var(--ink); }
+.stButton > button[kind="primary"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.stButton > button[kind="primary"]:hover { background: #fff; border-color: #fff; color: var(--bg); }
+[data-testid="stFileUploader"] section { background: var(--panel); border: 1px dashed var(--dim); border-radius: 10px; }
+[data-testid="stAlert"] { background: var(--panel) !important; border: 1px solid var(--line); border-left: 3px solid var(--red);
+  border-radius: 10px; }
+[data-testid="stAlert"] *, [data-testid="stAlertContainer"] { background: var(--panel) !important; color: var(--ink) !important; }
+.legend { display:flex; flex-wrap:wrap; gap:.5rem 1.6rem; font-size:.82rem; color:var(--muted); margin:.2rem 0 .6rem; }
+.legend i { display:inline-block; width:1.5rem; border-top:2px solid var(--ink); vertical-align:middle; margin-right:.5rem; }
+.legend i.dash { border-top-style:dashed; border-color:var(--dim); } .legend i.rule { border-color:var(--red); }
+.legend i.dot { width:.7rem; height:.7rem; border:3px solid var(--dim); border-radius:50%; background:var(--ink); }
+.eyebrow { color: var(--red); font-size:.78rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; margin:0 0 .5rem; }
+</style>"""
+
 PRESENT_CSS = """<style>
-html, body, .stApp, [data-testid="stMarkdownContainer"], [data-testid="stTable"] table,
-[data-testid="stCaptionContainer"], [data-testid="stExpander"] summary, [data-testid="stAlert"]
-{ font-size: 130% !important; }
-[data-testid="stTable"] td, [data-testid="stTable"] th { font-size: 130% !important; padding: .5rem .8rem !important; }
-h1 { font-size: 3rem !important; } h2 { font-size: 2.2rem !important; } h3 { font-size: 1.8rem !important; }
-[data-testid="stMetricValue"] { font-size: 2.6rem !important; } [data-testid="stMetricLabel"] { font-size: 1.2rem !important; }
+.block-container { zoom: 1.15; max-width: 1500px; }
+[data-testid="stTable"] thead th:first-child, [data-testid="stTable"] tbody th { display: none; }
+[data-testid="stTable"] td, [data-testid="stTable"] th { padding: .55rem .8rem !important; font-size: .9rem; }
 </style>"""
 
 
@@ -165,7 +209,7 @@ def public_detail(signal: str | None, detail: Any) -> str:
     return text
 
 
-def public_label(label: Any, fallback: str = "—") -> str:
+def public_label(label: Any, fallback: str = "-") -> str:
     """Campaign/family labels come from page content (platform names, brands): hidden in public mode."""
     return fallback if PUBLIC["on"] else defang(label)
 
@@ -183,7 +227,7 @@ def plain(text: Any) -> str:
 def short_value(v: Any, limit: int = 160) -> str:
     """Compact, defanged representation of a feature value for tables."""
     if v is None or (isinstance(v, float) and v != v):
-        return "—"
+        return "-"
     if hasattr(v, "tolist"):
         v = v.tolist()
     if isinstance(v, (list, tuple)):
@@ -215,7 +259,7 @@ def human_size(n: Any) -> str:
     try:
         n = float(n)
     except (TypeError, ValueError):
-        return "—"
+        return "-"
     for unit in ("B", "KB", "MB", "GB"):
         if n < 1024 or unit == "GB":
             return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
@@ -364,7 +408,7 @@ def reasons_frame(reasons: list[dict[str, Any]], only_positive: bool = False,
     rows = []
     for r in reasons:
         if r.get("signal") == RULE_SIGNAL:
-            rows.append({"przesłanka": "⚠️ " + defang(r.get("detail")), "sygnał": "reguła kampanii",
+            rows.append({"przesłanka": "Uwaga: " + defang(r.get("detail")), "sygnał": "reguła kampanii",
                          "podobieństwo": None, "waga": None, "wkład": None})
             continue
         score, weight = float(r.get("score") or 0), float(r.get("weight") or 0)
@@ -395,13 +439,13 @@ def show_edges_list(edges: list[dict[str, Any]], s: dict[str, Any], me: str | No
     key = key_edge_index(edges) if only_key_open else -1
     for i, e in enumerate(edges):
         other = e["b"] if me and e["a"] == me else (e["a"] if me else f"{e['a']} ↔ {e['b']}")
-        camp = s["camp_of"].get(other, "—") if me else ""
-        fam = s["fam_of_camp"].get(camp, "—") if me else ""
+        camp = s["camp_of"].get(other, "-") if me else ""
+        fam = s["fam_of_camp"].get(camp, "-") if me else ""
         lvl = "kampania" if e["level"] == "campaign" else "rodzina"
-        rule = " · ⚠️ odrzucona jako kampania" if any(r.get("signal") == RULE_SIGNAL for r in e["reasons"]) else ""
-        head = f"{md_safe(other)} — poziom: {lvl} — wynik {float(e['score']):.2f}"
+        rule = " · odrzucona jako kampania" if any(r.get("signal") == RULE_SIGNAL for r in e["reasons"]) else ""
+        head = f"{md_safe(other)} · poziom: {lvl} · wynik {float(e['score']):.2f}"
         if me:
-            head += f" — {md_safe(camp)} / {md_safe(fam)}"
+            head += f" · {md_safe(camp)} / {md_safe(fam)}"
         with st.expander(head + rule, expanded=(i == key)):
             show_table(reasons_frame(e["reasons"]))
 
@@ -494,11 +538,11 @@ def build_campaign_report(s: dict[str, Any]) -> tuple[dict[str, Any], str]:
 def report_downloads(s: dict[str, Any]) -> None:
     payload, csv_text = build_campaign_report(s)
     stamp = time.strftime("%Y%m%d_%H%M")
-    st.download_button("⬇️ Pobierz raport kampanii (JSON)",
+    st.download_button("Pobierz raport kampanii (JSON)",
                        json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8"),
                        file_name=f"raport_kampanii_{stamp}.json", mime="application/json",
                        use_container_width=True)
-    st.download_button("⬇️ Pobierz raport kampanii (CSV)", csv_text.encode("utf-8"),
+    st.download_button("Pobierz raport kampanii (CSV)", csv_text.encode("utf-8"),
                        file_name=f"raport_kampanii_{stamp}.csv", mime="text/csv", use_container_width=True)
     st.caption("Raport dla analityka: kampania, rodzina, incydenty, najważniejsze przesłanki. "
                "ID zamaskowane, domeny niekilkalne.")
@@ -510,14 +554,18 @@ def view_campaigns(s: dict[str, Any]) -> None:
     cl = s["clusters"]
     clusters, families = cl.get("clusters", []), cl.get("families", [])
     c1, c2, c3, c4 = st.columns(4)
+    multi = sum(1 for c in clusters if len(c["members"]) > 1)
     c1.metric("Incydenty", len(s["incidents"]) or cl.get("params", {}).get("n_incidents", 0))
-    c2.metric("Kampanie", len(clusters))
-    c3.metric("Kampanie wieloincydentowe", sum(1 for c in clusters if len(c["members"]) > 1))
+    with c2, st.container(key="hero_metric"):
+        st.metric("Kampanie wieloincydentowe", multi,
+                  help="Kampanie, w których system powiązał co najmniej 2 zgłoszenia. To one pokazują skalę oszustwa.")
+    c3.metric("Pojedyncze zgłoszenia", len(clusters) - multi,
+              help="Kampanie z jednym incydentem, bez powiązań z innymi zgłoszeniami.")
     c4.metric("Rodziny", len(families))
 
     left, right = st.columns([3, 1])
     with right:
-        if st.button("🔄 Przelicz", help="Uruchamia correlate(): krawędzie, kampanie i rodziny z bieżących cech",
+        if st.button("Przelicz", help="Uruchamia correlate(): krawędzie, kampanie i rodziny z bieżących cech",
                      use_container_width=True):
             from fakecollector.engine import api
             t0 = time.time()
@@ -527,13 +575,13 @@ def view_campaigns(s: dict[str, Any]) -> None:
             st.success(f"Przeliczono w {time.time() - t0:.1f} s")
             st.rerun()
         p = cl.get("params", {})
-        st.caption(f"Progi: kampania ≥ {p.get('tau_campaign', '—')}, rodzina ≥ {p.get('tau_family', '—')}, "
-                   f"nowa kampania < {p.get('tau_new', '—')} · metoda: {p.get('method', '—')}")
+        st.caption(f"Progi: kampania ≥ {p.get('tau_campaign', '-')}, rodzina ≥ {p.get('tau_family', '-')}, "
+                   f"nowa kampania < {p.get('tau_new', '-')} · metoda: {p.get('method', '-')}")
         if clusters:
             report_downloads(s)
 
     if not clusters:
-        left.warning("Brak data/graph/clusters.json — uruchom „Przelicz” (po `ingest` i `features`).")
+        left.warning("Brak data/graph/clusters.json: uruchom „Przelicz” (po `ingest` i `features`).")
         return
     labels = s["labels"]
     fam_by_id = {f["family_id"]: f for f in families}
@@ -541,13 +589,13 @@ def view_campaigns(s: dict[str, Any]) -> None:
     for c in sorted(clusters, key=lambda c: (c.get("family_id") or "", c["campaign_id"])):
         fam = fam_by_id.get(c.get("family_id") or "", {})
         rows.append({
-            "rodzina": c.get("family_id") or "—",
+            "rodzina": c.get("family_id") or "-",
             "etykieta rodziny": public_label(fam.get("label", "")),
             "kampania": c["campaign_id"],
             "etykieta kampanii": public_label(c.get("label", "")),
             "liczba incydentów": len(c["members"]),
             "incydenty": ", ".join(c["members"]),
-            "główne sygnały": ", ".join(labels.get(x, x) or x for x in c.get("top_signals", [])) or "—",
+            "główne sygnały": ", ".join(labels.get(x, x) or x for x in c.get("top_signals", [])) or "-",
             "spójność (cohesion)": round(float(c.get("cohesion", 0)), 3),
         })
     with left:
@@ -558,18 +606,25 @@ def view_campaigns(s: dict[str, Any]) -> None:
     st.subheader("Rodziny")
     for f in families:
         n_c = len(f.get("campaigns", []))
-        with st.expander(f"{f['family_id']} — {md_safe(public_label(f.get('label', '')))} — {campaigns_pl(n_c)}, "
+        with st.expander(f"{f['family_id']} · {md_safe(public_label(f.get('label', '')))} · {campaigns_pl(n_c)}, "
                          f"{incidents_pl(len(f.get('members', [])))}"):
             st.write("Kampanie:", ", ".join(f.get("campaigns", [])))
             st.write("Incydenty:", ", ".join(f.get("members", [])))
             st.write("Sygnały łączące rodzinę:",
-                     ", ".join(labels.get(x, x) or x for x in f.get("top_signals", [])) or "—")
+                     ", ".join(labels.get(x, x) or x for x in f.get("top_signals", [])) or "-")
     if cl.get("duplicate_groups"):
         st.subheader("Grupy duplikatów")
         st.write([", ".join(g) for g in cl["duplicate_groups"]])
 
 
 # =============================================================== view 2: graph
+
+GRAPH_CSS = ("<style>html,body{margin:0;background:#0c0d10!important;color:#f5f5f4}"
+             ".card{border:1px solid #24272e!important;border-radius:10px;background:#0c0d10!important;overflow:hidden}"
+             "#mynetwork{border:0!important;background:#0c0d10!important}"
+             "div.vis-tooltip{background:#181b21!important;color:#f5f5f4!important;border:1px solid #24272e!important;"
+             "border-radius:8px;font-family:-apple-system,system-ui,sans-serif;font-size:12px;padding:8px 10px}</style>")
+
 
 def build_graph_html(s: dict[str, Any], show_family: bool, show_rule: bool, min_score: float) -> str:
     from pyvis.network import Network
@@ -580,17 +635,17 @@ def build_graph_html(s: dict[str, Any], show_family: bool, show_rule: bool, min_
     ccol = {c: PALETTE[i % len(PALETTE)] for i, c in enumerate(camps)}
     fcol = {f: PALETTE[(i * 5 + 3) % len(PALETTE)] for i, f in enumerate(fams)}
 
-    net = Network(height="640px", width="100%", bgcolor="#ffffff", font_color="#222222",
+    net = Network(height="680px", width="100%", bgcolor="#0c0d10", font_color="#f5f5f4",
                   cdn_resources="in_line", notebook=False)
     nodes = sorted(set(s["incidents"]) | set(camp_of))
     for n in nodes:
-        camp = camp_of.get(n, "—")
-        fam = fam_of_camp.get(camp) or "—"
+        camp = camp_of.get(n, "-")
+        fam = fam_of_camp.get(camp) or "-"
         inc = s["incidents"].get(n, {})
         kinds = inc.get("meta", {}).get("kinds", {})
         tip = (f"{n}\nkampania: {camp}\nrodzina: {fam}\n"
                + ", ".join(f"{k}: {v}" for k, v in sorted(kinds.items())))
-        net.add_node(n, label=f"{n}\n{camp}", title=plain(tip), shape="dot", size=22, borderWidth=5,
+        net.add_node(n, label=f"{n}\n{camp}", title=plain(tip), shape="dot", size=26, borderWidth=5,
                      color={"background": ccol.get(camp, "#cccccc"), "border": fcol.get(fam, "#888888"),
                             "highlight": {"background": ccol.get(camp, "#cccccc"), "border": "#000000"}})
     for e in s["edges"].to_dict("records"):
@@ -602,43 +657,47 @@ def build_graph_html(s: dict[str, Any], show_family: bool, show_rule: bool, min_
         lines = [f"{'KAMPANIA' if lvl == 'campaign' else 'RODZINA'}  {e['a']} ↔ {e['b']}  wynik {float(e['score']):.2f}"]
         for r in e["reasons"]:
             if r.get("signal") == RULE_SIGNAL:
-                lines.append(f"⚠ {r.get('detail')}")
+                lines.append(f"Uwaga: {r.get('detail')}")
             elif float(r.get("score") or 0) > 0:
                 lines.append(f"• {public_detail(r.get('signal'), r.get('detail'))}  (waga {float(r.get('weight') or 0):g}, "
                              f"sim {float(r.get('score') or 0):.2f})")
-        color = "#2b2b2b" if lvl == "campaign" else ("#d62728" if is_rule else "#7f7f7f")
-        net.add_edge(e["a"], e["b"], title=plain("\n".join(lines)), width=1 + 6 * float(e["score"]),
+        color = ("#f5f5f4" if lvl == "campaign" else
+                 ("rgba(229,72,77,0.6)" if is_rule else "rgba(154,156,164,0.55)"))
+        net.add_edge(e["a"], e["b"], title=plain("\n".join(lines)), width=1 + 3 * float(e["score"]),
                      dashes=lvl != "campaign", color=color,
-                     label="reguła" if is_rule else "", font={"size": 10, "color": "#d62728"})
+                     label="", font={"size": 12, "color": "#e5484d", "strokeWidth": 4, "strokeColor": "#0c0d10"})
     net.set_options(json.dumps({
-        "physics": {"barnesHut": {"gravitationalConstant": -6000, "springLength": 160},
+        "physics": {"barnesHut": {"gravitationalConstant": -16000, "springLength": 220, "avoidOverlap": 0.8},
                     "stabilization": {"iterations": 250}},
         "interaction": {"hover": True, "tooltipDelay": 80},
-        "nodes": {"font": {"size": 14, "multi": False}},
+        "edges": {"smooth": False},
+        "nodes": {"font": {"size": 17, "face": "system-ui, sans-serif", "multi": False,
+                           "strokeWidth": 5, "strokeColor": "#0c0d10"}},
     }))
-    return net.generate_html(notebook=False)
+    html = net.generate_html(notebook=False)
+    return html.replace("</head>", GRAPH_CSS + "</head>", 1)
 
 
 def view_graph(s: dict[str, Any]) -> None:
     if s["edges"].empty and not s["incidents"]:
-        st.warning("Brak danych grafu — uruchom „Przelicz” w zakładce Kampanie i rodziny.")
+        st.warning("Brak danych grafu: uruchom „Przelicz” w zakładce Kampanie i rodziny.")
         return
     c1, c2, c3 = st.columns([1, 1, 2])
-    show_family = c1.checkbox("Krawędzie poziomu rodziny (przerywane)", value=True)
-    show_rule = c2.checkbox("Pokaż krawędzie odrzucone regułą (czerwone)", value=True)
+    show_family = c1.checkbox("Krawędzie rodziny", value=True)
+    show_rule = c2.checkbox("Odrzucone regułą", value=True)
     min_score = c3.slider("Minimalny wynik krawędzi", 0.0, 1.0, 0.2, 0.05)
-    st.caption("Węzeł = incydent · kolor wypełnienia = kampania · kolor obwódki = rodzina · "
-               "linia ciągła = powiązanie na poziomie kampanii · przerywana = poziom rodziny · "
-               "czerwona = odrzucona jako kampania („" + RULE_TEXT + "”). "
-               "Najedź na krawędź, aby zobaczyć przesłanki z wagami.")
+    st.markdown('<div class="legend"><span><i class="dot"></i>węzeł = incydent (wypełnienie: kampania, obwódka: rodzina)</span>'
+                '<span><i></i>ta sama kampania</span><span><i class="dash"></i>ta sama rodzina</span>'
+                '<span><i class="rule"></i>odrzucona regułą</span></div>', unsafe_allow_html=True)
+    st.caption("Najedź na krawędź, aby zobaczyć przesłanki z wagami. Czerwona krawędź: „" + RULE_TEXT + "”.")
     import streamlit.components.v1 as components
 
-    components.html(build_graph_html(s, show_family, show_rule, min_score), height=660, scrolling=False)
+    components.html(build_graph_html(s, show_family, show_rule, min_score), height=700, scrolling=False)
 
     rule_edges = s["edges"][s["edges"]["rule"]]
     st.subheader(f"Krawędzie odrzucone regułą kampanii ({len(rule_edges)})")
     if rule_edges.empty:
-        st.caption("Brak — każda para z sygnałami klasy „campaign” spełnia regułę twardych dowodów.")
+        st.caption("Brak: każda para z sygnałami klasy „campaign” spełnia regułę twardych dowodów.")
     for e in rule_edges.to_dict("records"):
         note = next((r.get("detail") for r in e["reasons"] if r.get("signal") == RULE_SIGNAL), RULE_TEXT)
         st.warning(f"{md_safe(e['a'])} ↔ {md_safe(e['b'])}: {md_safe(note)}")
@@ -691,18 +750,18 @@ def feature_frame(df: pd.DataFrame) -> pd.DataFrame:
 def view_incident(s: dict[str, Any]) -> None:
     incs = s["incidents"]
     if not incs:
-        st.warning("Brak data/interim/incidents.jsonl — uruchom `python -m fakecollector ingest`.")
+        st.warning("Brak data/interim/incidents.jsonl: uruchom `python -m fakecollector ingest`.")
         return
     ids = list(incs)
     default = st.query_params.get("incident")
     pick = st.selectbox("Incydent", ids, index=ids.index(default) if default in ids else 0,
-                        format_func=lambda i: f"{i} — {s['camp_of'].get(i, '—')} / "
-                                              f"{s['fam_of_camp'].get(s['camp_of'].get(i, ''), '—')}")
+                        format_func=lambda i: f"{i} · {s['camp_of'].get(i, '-')} / "
+                                              f"{s['fam_of_camp'].get(s['camp_of'].get(i, ''), '-')}")
     inc = incs[pick]
     meta = inc.get("meta", {})
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Kampania", s["camp_of"].get(pick, "—"))
-    c2.metric("Rodzina", s["fam_of_camp"].get(s["camp_of"].get(pick, ""), "—") or "—")
+    c1.metric("Kampania", s["camp_of"].get(pick, "-"))
+    c2.metric("Rodzina", s["fam_of_camp"].get(s["camp_of"].get(pick, ""), "-") or "-")
     c3.metric("Materiały", meta.get("n_materials", len(inc.get("materials", []))))
     c4.metric("Strony (landing)", meta.get("n_pages", 0))
     if meta.get("landing_urls"):
@@ -744,7 +803,7 @@ def view_incident(s: dict[str, Any]) -> None:
             continue
         sub = df[(df.get("incident_id") == pick) | df["entity_id"].astype(str).str.split("#").str[0].isin(mat_ids)]
         n_err = int(sub["errors"].map(lambda e: len(e) if e is not None else 0).gt(0).sum()) if "errors" in sub else 0
-        with st.expander(f"{mod} — {records_pl(len(sub))}" + (f", {n_err} z błędami" if n_err else "")):
+        with st.expander(f"{mod} · {records_pl(len(sub))}" + (f", {n_err} z błędami" if n_err else "")):
             if sub.empty:
                 st.caption("Brak rekordów tego modułu dla incydentu (np. brak obsługiwanych materiałów).")
             elif PUBLIC["on"]:
@@ -776,12 +835,12 @@ def engine_supports_exclude() -> bool:
 def demo_exclude_picker(s: dict[str, Any]) -> list[str]:
     """'Demo mode': compare the upload against the base without the chosen incidents (in memory)."""
     supported = engine_supports_exclude()
-    with st.expander("🧪 Tryb demo: wyklucz incydenty z bazy", expanded=False):
+    with st.expander("Tryb demo: wyklucz incydenty z bazy", expanded=False):
         st.caption("Pozwala pokazać na żywo „nową kampanię”: np. wgraj folder 47 i wyklucz nask:47, "
                    "a narzędzie oceni go tak, jakby nigdy go nie widziało. Wykluczenie działa tylko "
                    "w pamięci, na czas tej analizy.")
         if not supported:
-            st.caption("⚠️ Wymaga wersji silnika z `analyze(..., exclude_incidents=...)` (W5) — "
+            st.caption("Wymaga wersji silnika z `analyze(..., exclude_incidents=...)` (W5), "
                        "opcja aktywna po jej scaleniu.")
         picked = st.multiselect("Incydenty do wykluczenia", sorted(s["incidents"]), disabled=not supported,
                                 placeholder="np. nask:47")
@@ -853,12 +912,12 @@ def view_analyze(s: dict[str, Any]) -> None:
     st.write("Wgraj pojedynczy materiał: **zip** z zapisem strony (plik HTML + folder *_files*), "
              "plik **HTML/MHTML** albo **obraz** reklamy. Materiał zostanie porównany z bazą kampanii.")
     st.caption("Plik trafia tylko do data/uploads/ (poza gitem). Nic nie jest otwierane w przeglądarce "
-               "ani pobierane z sieci — analiza jest statyczna.")
+               "ani pobierane z sieci, analiza jest statyczna.")
     up = st.file_uploader("Nowy materiał", type=UPLOAD_TYPES)
     if not s["clusters"].get("clusters"):
-        st.warning("Baza kampanii jest pusta — najpierw „Przelicz” w zakładce Kampanie i rodziny.")
+        st.warning("Baza kampanii jest pusta, najpierw „Przelicz” w zakładce Kampanie i rodziny.")
     exclude = demo_exclude_picker(s)
-    if up is None or not st.button("🔍 Analizuj", type="primary"):
+    if up is None or not st.button("Analizuj", type="primary"):
         return
     updir = paths()["uploads"]
     updir.mkdir(parents=True, exist_ok=True)
@@ -884,9 +943,9 @@ def view_analyze(s: dict[str, Any]) -> None:
     camp_id, fam_id = res.campaign_id, getattr(res, "family_id", None)
     if exclude:
         camp_id, fam_id = saved_ids_for(res, s)
-    text = STATUS_TEXT.get(status, status).format(campaign=camp_id or "—", family=fam_id or "—")
+    text = STATUS_TEXT.get(status, status).format(campaign=camp_id or "-", family=fam_id or "-")
     camp = next((c for c in s["clusters"].get("clusters", []) if c["campaign_id"] == camp_id), None)
-    st.markdown(f"# {STATUS_ICON.get(status, '')} {md_safe(text)}")
+    st.markdown(f"# {md_safe(text)}")
     tau_new = float(s["clusters"].get("params", {}).get("tau_new") or load_settings(0).get("engine", {}).get("tau_new", 0.35))
     st.markdown(f"**{md_safe(analysis_sentence(res, status, camp_id, fam_id, tau_new))}**")
     if camp:
@@ -897,12 +956,12 @@ def view_analyze(s: dict[str, Any]) -> None:
     c2.metric("Pewność (rodzina)", f"{float(getattr(res, 'family_confidence', 0) or 0):.2f}")
     c3.metric("Czas analizy", f"{dt:.1f} s")
 
-    st.subheader("Przesłanki i najbliżsi sąsiedzi — poziom kampanii")
+    st.subheader("Przesłanki i najbliżsi sąsiedzi, poziom kampanii")
     show_edges_list([edge_to_dict(e) | {"level": "campaign"} for e in (res.nearest or [])], s,
                     me=res.incident_id, only_key_open=True)
     fam_near = getattr(res, "family_nearest", None) or []
     if fam_near:
-        st.subheader("Najbliżsi sąsiedzi — poziom rodziny")
+        st.subheader("Najbliżsi sąsiedzi, poziom rodziny")
         show_edges_list([edge_to_dict(e) | {"level": "family"} for e in fam_near], s, me=res.incident_id,
                         only_key_open=True)
 
@@ -915,7 +974,7 @@ def view_method(s: dict[str, Any]) -> None:
     st.caption("Klasa „campaign” = identyfikator konkretnej kampanii (piksel, konto reklamowe, domena, "
                "identyczny plik, near-duplikat). Klasa „family” = wspólny zestaw narzędzi / aktor. "
                "Krawędź kampanii wymaga ≥ 1 twardego identyfikatora albo ≥ 2 różnych sygnałów klasy "
-               "campaign — inaczej trafia na poziom rodziny („" + RULE_TEXT + "”).")
+               "campaign, inaczej trafia na poziom rodziny („" + RULE_TEXT + "”).")
     sig = s["signals"]
     if sig.empty:
         st.info("Nie udało się wczytać sygnałów z modułów cech.")
@@ -924,7 +983,7 @@ def view_method(s: dict[str, Any]) -> None:
                      column_config={"waga": st.column_config.NumberColumn(format="%.1f")})
     st.subheader("Raport ewaluacji")
     if not reports:
-        st.info("Brak reports/eval_*.md — uruchom `python -m fakecollector evaluate`.")
+        st.info("Brak reports/eval_*.md: uruchom `python -m fakecollector evaluate`.")
         return
     latest = reports[-1]
     st.caption(f"Najnowszy raport: {latest.name}")
@@ -934,22 +993,26 @@ def view_method(s: dict[str, Any]) -> None:
 # =============================================================== main
 
 def main() -> None:
+    st.logo(str(ASSETS / "logo.png"), icon_image=str(ASSETS / "icon.png"), size="large")
+    st.markdown('<p class="eyebrow">HackNation 2026 · NASK</p>', unsafe_allow_html=True)
     st.title(TITLE)
     st.caption("Zadanie NASK „Kolekcjoner fejków / Follow the Fake” · HackNation 2026 · analiza statyczna, "
                "offline, bez renderowania stron oszustów")
     s = state()
     qp = st.query_params.get("tab", VIEW_KEYS[0])
     idx = VIEW_KEYS.index(qp) if qp in VIEW_KEYS else 0
-    left, right = st.columns([4, 2])
-    view = left.radio("Widok", VIEWS, index=idx, horizontal=True, label_visibility="collapsed")
-    PRESENT["on"] = right.toggle("Tryb prezentacji", value=st.query_params.get("present", "0") == "1",
-                                 help="Większa czcionka (ok. 130%) i statyczne tabele czytelne na rzutniku; "
-                                      "domyślnie ukrywa wiersze „brak: …” w przesłankach.")
-    PRESENT["hide_missing"] = right.checkbox("Ukryj wiersze „brak: …”", value=PRESENT["on"],
-                                             key=f"hide_missing_{PRESENT['on']}")
-    PUBLIC["on"] = right.toggle("Tryb publiczny", value=st.query_params.get("public", "0") == "1",
-                                help="Maskuje domeny (domena .tld), identyfikatory (…NNNN) oraz nazwy "
-                                     "platform, marek i osób — do zrzutów, nagrań i prezentacji.")
+    st.markdown(BASE_CSS, unsafe_allow_html=True)       # static CSS only, no data inside
+    view = st.segmented_control("Widok", VIEWS, default=VIEWS[idx], label_visibility="collapsed") or VIEWS[idx]
+    with st.sidebar:
+        st.subheader("Ustawienia widoku")
+        PRESENT["on"] = st.toggle("Tryb prezentacji", value=st.query_params.get("present", "0") == "1",
+                                  help="Większa czcionka (ok. 130%) i statyczne tabele czytelne na rzutniku; "
+                                       "domyślnie ukrywa wiersze „brak: …” w przesłankach.")
+        PRESENT["hide_missing"] = st.checkbox("Ukryj wiersze „brak: …”", value=PRESENT["on"],
+                                              key=f"hide_missing_{PRESENT['on']}")
+        PUBLIC["on"] = st.toggle("Tryb publiczny", value=st.query_params.get("public", "0") == "1",
+                                 help="Maskuje domeny (domena .tld), identyfikatory (…NNNN) oraz nazwy "
+                                      "platform, marek i osób, do zrzutów, nagrań i prezentacji.")
     st.query_params["tab"] = VIEW_KEYS[VIEWS.index(view)]
     st.query_params["public"] = "1" if PUBLIC["on"] else "0"
     st.query_params["present"] = "1" if PRESENT["on"] else "0"

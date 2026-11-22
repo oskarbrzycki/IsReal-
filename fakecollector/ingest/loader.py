@@ -304,6 +304,10 @@ def build_incident(folder: Path, incident_id: str, source: str, stop: dict[str, 
     kinds: dict[str, int] = {}
     for m in materials:
         kinds[m.kind] = kinds.get(m.kind, 0) + 1
+    if not any(m.kind != "other" and m.size_bytes > 0 for m in materials):
+        shown = ", ".join(r["rel"].as_posix() for r in rows[:3]) or "(pusty folder)"
+        log.warning("ingest: %s: brak rozpoznanych materiałów (HTML/HAR/obraz/wideo/JSON), plik(i) pominięte "
+                    "w analizie: %s", folder.name, shown)
     landing_urls = sorted({m.original_url for m in materials if m.original_url and m.kind in ("html", "mhtml")})
     meta = {
         "folder": folder.name,

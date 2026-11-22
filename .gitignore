@@ -30,3 +30,6 @@ Thumbs.db
 
 # machine-readable evaluation numbers (the markdown reports are committed, the .json are local)
 reports/*.json
+
+# local "foreign juror" test set (generated, never commit)
+data_jury/

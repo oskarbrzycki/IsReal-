@@ -131,14 +131,24 @@ def render(steps: list[dict[str, Any]], notes: dict[str, Any], features: list[di
     if summary:
         parts += ["## Wyniki\n", render_metrics(summary) + "\n"]
     else:
-        parts.append("## Wyniki\n\nBrak (ewaluacja nie zakończyła się albo wcześniejszy krok się nie powiódł).\n")
+        if all(st["ok"] for st in steps):
+            parts.append("## Wyniki\n\nBrak etykiet: metryki pominięte. Kampanie i rodziny są w "
+                         "`data/graph/clusters.json` i w UI (`streamlit run ui/app.py`).\n")
+        else:
+            parts.append("## Wyniki\n\nBrak (wcześniejszy krok się nie powiódł).\n")
     return "\n".join(parts)
 
 
 # --------------------------------------------------------------------------- main
+def ingest_command(py: str, data: str | None) -> list[str]:
+    """`ingest` as the user would run it; without --data the CLI uses paths.raw (DATA_DIR aware)."""
+    return [py, "-m", "fakecollector", "ingest"] + (["--data", data] if data else [])
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", default="data/raw/nask", help="dataset root for ingest")
+    ap.add_argument("--data", default=None,
+                    help="dataset root for ingest (default: paths.raw from config, DATA_DIR aware)")
     ap.add_argument("--online", action="store_true", help="allow OSINT lookups in the features step")
     ap.add_argument("--skip-ingest", action="store_true", help="reuse data/interim/incidents.jsonl")
     ap.add_argument("--no-save", action="store_true", help="print only, do not write reports/reference_run_*.md")
@@ -149,7 +159,7 @@ def main(argv: list[str] | None = None) -> int:
     started = time.time()
     plan = []
     if not args.skip_ingest:
-        plan.append(("ingest", [py, "-m", "fakecollector", "ingest", "--data", args.data]))
+        plan.append(("ingest", ingest_command(py, args.data)))
     plan += [("features", [py, "-m", "fakecollector", "features", "--module", "all",
                            "--online" if args.online else "--offline"]),
              ("correlate", [py, "-m", "fakecollector", "correlate"]),
@@ -182,7 +192,7 @@ def main(argv: list[str] | None = None) -> int:
         out.parent.mkdir(exist_ok=True)
         out.write_text(text, encoding="utf-8")
         print(f"\nZapisano: {out.relative_to(REPO)}")
-    return 0 if all(s["ok"] for s in steps) and summary else 1
+    return 0 if all(s["ok"] for s in steps) else 1   # no labels -> no metrics, still a success
 
 
 if __name__ == "__main__":

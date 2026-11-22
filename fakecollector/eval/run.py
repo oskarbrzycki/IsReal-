@@ -55,8 +55,11 @@ def evaluate(
         else collect_signals(cfg["signal_params"], classes=cfg["signal_class"])
     tables = tables if tables is not None else load_feature_tables(resolve_path(ctx, "features"))
     labels_path = labels_path or (ctx.repo_root / "eval" / "labels.yaml")
-    truth = load_labels(labels_path)
-    ftruth = load_family_labels(labels_path, truth)
+    if labels_path.exists():
+        truth = load_labels(labels_path)
+        ftruth = load_family_labels(labels_path, truth)
+    else:                                   # foreign dataset without our labels: report says so, no exception
+        truth, ftruth = {}, {}
     mat_to_inc, dup_mats, inc_ids = load_incident_index(resolve_path(ctx, "interim"))
     stoplist = ctx.settings.get("stoplist")
     feats = aggregate_incidents(tables, signals, stoplist, mat_to_inc, extra_ids=inc_ids)
@@ -78,7 +81,12 @@ def evaluate(
                  f"- Sygnały klasy campaign: {', '.join(sorted(n for n, x in signals.items() if x['class'] == 'campaign')) or '-'}\n"
                  f"- Sygnały klasy family: {', '.join(sorted(n for n, x in signals.items() if x['class'] == 'family')) or '-'}\n")
     if n_labeled < 2 or not signals:
-        lines.append("\n**Za mało danych do ewaluacji** (brak sygnałów albo incydentów z etykietą).\n")
+        if n_labeled < 2:
+            lines.append("\n**Brak etykiet: metryki pominięte.** Za mało danych do ewaluacji "
+                         "(mniej niż 2 incydenty z etykietą w `labels.yaml`). Kampanie i rodziny z `correlate` "
+                         "są policzone i dostępne w `data/graph/clusters.json` oraz w UI.\n")
+        else:
+            lines.append("\n**Za mało danych do ewaluacji** (brak sygnałów).\n")
         path.write_text(mask_text("\n".join(lines)), encoding="utf-8")
         return path
 
