@@ -58,7 +58,7 @@
 ├── reports/                 # metryki ewaluacji (.md/.csv, bez danych surowych)
 ├── tests/
 ├── Dockerfile  docker-compose.yml  requirements.txt  .env.example  .gitignore
-├── PLAN.md  CONTRACTS.md  README.md
+├── CONTRACTS.md  README.md
 ```
 Repo: `oskarbrzycki/hackaton1` (prywatne do czasu zgłoszenia).
 Branche: W1 `feature/ingest` (od ~16:00 też `feature/ui`), W2 `feature/text`, W3 `feature/visual`, W4 `feature/infra`, W5 `feature/clustering`, lider `feature/docs`. `feature/features` usuwamy. Każdy W modyfikuje tylko swój moduł i swoje testy. Merge do `main` przez Pull Request po akceptacji koordynatora.

@@ -12,9 +12,9 @@ Aplikacja nasłuchuje wyłącznie na `localhost` (`.streamlit/config.toml`), wi�
 | # | Kto | Co | Sprawdzenie |
 |---|---|---|---|
 | 0 | Operator | **Dzień wcześniej / na stabilnej sieci:** pobrać wagi modeli, łącznie ok. 1,1 GB (sam CLIP ok. 600 MB; YuNet, SFace i CLIP do `data/models/`, e5 do cache Hugging Face; szczegóły w README). Najprościej jednym pełnym przebiegiem `features --module all` | drugi przebieg `features` nic nie pobiera i działa bez sieci |
-| 1 | Operator | Przebieg wsadowy: `python -m fakecollector ingest`, `features --module all`, `correlate` | w zakładce 1: 10 incydentów, 8 kampanii, **6 rodzin** |
+| 1 | Operator | Przebieg wsadowy: `python -m fakecollector ingest`, `features --module all`, `correlate` | w zakładce 1: 10 incydentów, **2 kampanie wieloincydentowe**, 6 pojedynczych zgłoszeń (razem 8 kampanii), **6 rodzin** |
 | 2 | Operator | Przygotować pliki demo w `data/demo/` (poza gitem), komendy niżej | `folder2_bez_har.zip` ok. 1 MB, `folder47.zip` ok. 40 MB |
-| 3 | Operator | `streamlit run ui/app.py`, przeglądarka na `http://localhost:8501/?public=1&tab=kampanie` (**Tryb publiczny włączony**: maskuje domeny, ID i nazwy platform), zoom 110–125%, pełny ekran | strona się ładuje, przełącznik „Tryb publiczny” jest włączony, nie ma czerwonych błędów |
+| 3 | Operator | `streamlit run ui/app.py`, przeglądarka na `http://localhost:8501/?public=1&tab=kampanie` (**Tryb publiczny włączony**: maskuje domeny, ID i nazwy platform), zoom 110–125%, pełny ekran | strona się ładuje, w sidebarze („Ustawienia widoku”) przełącznik „Tryb publiczny” jest włączony, pasek zakładek u góry pokazuje 5 widoków, nie ma czerwonych błędów |
 | 4 | Operator | **Rozgrzewka (obowiązkowa):** w zakładce 4 przeanalizować raz `folder47.zip`. Pierwsza analiza ładuje modele (ok. 40 s), kolejne trwają 11–23 s | wynik się pokazał, druga analiza < 25 s |
 | 5 | Operator | Wrócić do zakładki 1, zamknąć inne karty i powiadomienia, wyłączyć tryb uśpienia | |
 | 6 | Operator | Otworzyć w drugiej karcie folder `docs/img/demo/` (plan B) | 5 zrzutów widocznych |
@@ -33,7 +33,7 @@ mkdir -p data/demo
 
 ### 0:00–0:35 · Zakładka „Kampanie i rodziny”
 - **Operator:** nic nie klika, ekran startowy już widać.
-- **Narrator:** „Dostaliśmy 10 zgłoszeń od NASK. Narzędzie samo złożyło je w 8 kampanii i 6 rodzin. Kampania C001 to foldery 1 i 2: ta sama strona na dwóch różnych domenach. C002 to foldery 48 i 61. Rodzina F001 łączy obie te kampanie i folder 3: wspólny zestaw narzędzi, ale za mało twardych dowodów, żeby nazwać to jedną kampanią.”
+- **Narrator:** „Dostaliśmy 10 zgłoszeń od NASK. Narzędzie samo złożyło je w 8 kampanii i 6 rodzin, ale tylko dwie z tych kampanii łączą więcej niż jedno zgłoszenie (wyróżniona karta „Kampanie wieloincydentowe”), pozostałe sześć to pojedyncze zgłoszenia bez powiązań. Kampania C001 to foldery 1 i 2: ta sama strona na dwóch różnych domenach. C002 to foldery 48 i 61. Rodzina F001 łączy obie te kampanie i folder 3: wspólny zestaw narzędzi, ale za mało twardych dowodów, żeby nazwać to jedną kampanią.”
 - **Operator (0:25):** pokazać kursorem przycisk „Pobierz raport kampanii (CSV)”, bez klikania.
 - **Narrator:** „Analityk dostaje to jako JSON albo CSV, z zamaskowanymi identyfikatorami.”
 
@@ -46,17 +46,17 @@ mkdir -p data/demo
 - **Narrator:** „A 1 i 3? Mają tę samą nazwę platformy, ale to jedyny sygnał. Reguła mówi: za mało twardych dowodów na tę samą kampanię. Dlatego to powiązanie zostaje na poziomie rodziny i nie skleja dwóch różnych kampanii.”
 
 ### 1:25–2:15 · Zakładka „Analiza nowego materiału” (a): folder 2 bez HAR
-- **Operator:** kliknąć „Analiza nowego materiału”, rozwinąć „🧪 Tryb demo”, w polu wpisać `nask:2` i nacisnąć Enter, a potem Escape.
-- **Operator:** przeciągnąć `data/demo/folder2_bez_har.zip` na pole „Nowy materiał” i kliknąć „🔍 Analizuj”.
+- **Operator:** kliknąć „Analiza nowego materiału” w pasku zakładek u góry, rozwinąć „Tryb demo”, w polu wpisać `nask:2` i nacisnąć Enter, a potem Escape.
+- **Operator:** przeciągnąć `data/demo/folder2_bez_har.zip` na pole „Nowy materiał” i kliknąć „Analizuj”.
 - **Narrator (w trakcie, 11–23 s):** „Teraz sprawdzimy nowy materiał z brakami danych: zapis strony bez logu sieciowego. Żeby było uczciwie, wyrzucamy ten folder z bazy, więc narzędzie nigdy go nie widziało. Analiza wyciąga cechy z HTML, obrazów i tekstu, a potem porównuje je z całą bazą.”
-- **Wynik na ekranie:** **„🎯 Znana kampania C001”**.
+- **Wynik na ekranie:** **„Znana kampania C001”**.
 - **Operator:** rozwinąć pierwszego sąsiada (`nask:1`).
 - **Narrator:** „Rozpoznało kampanię mimo braku HAR: wspólne pliki i piksel w kodzie strony wystarczą. Brakujący sygnał po prostu nie jest liczony.”
 
 ### 2:15–2:50 · Analiza (b): folder 47 jako nowa kampania
-- **Operator:** usunąć `nask:2` (krzyżyk), dodać `nask:47`, wgrać `data/demo/folder47.zip`, kliknąć „🔍 Analizuj”.
+- **Operator:** usunąć `nask:2` (krzyżyk), dodać `nask:47`, wgrać `data/demo/folder47.zip`, kliknąć „Analizuj”.
 - **Narrator (w trakcie):** „A teraz coś, czego w bazie nie ma: reklama suplementu z innej kampanii.”
-- **Wynik na ekranie:** **„🆕 Nowa kampania”** (11–23 s).
+- **Wynik na ekranie:** **„Nowa kampania”** (11–23 s).
 - **Narrator:** „Narzędzie nie dokleja jej na siłę do żadnej znanej kampanii. Najbliższy sąsiad ma wynik 0,23, poniżej progu nowej kampanii 0,35.”
 
 ### 2:50–3:00 · Puenta

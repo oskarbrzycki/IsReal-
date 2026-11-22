@@ -23,15 +23,19 @@ Chcesz sprawdzić narzędzie na **swoich** zgłoszeniach? Nazwy folderów mogą 
 Zgłoszenie może mieć zagnieżdżone podfoldery. Pliki, których nie da się rozpoznać (pusty plik, uszkodzony zip,
 samo `.txt`), są **pomijane z ostrzeżeniem**, a pozostałe zgłoszenia przechodzą dalej bez przerwy.
 
-**a) Docker** (zalecane, modele są już w obrazie):
+**a) Docker** (zalecane, modele są już w obrazie). Dla Dockera zgłoszenia **muszą leżeć w
+`./data/raw/nask/<dowolna_nazwa>/`** w katalogu repozytorium (jeden folder = jedno zgłoszenie): tylko `./data`
+jest widoczne w kontenerze. Sprawdzona sekwencja (świeży klon, 3 zgłoszenia):
 
 ```bash
-# dane: data/raw/nask/<dowolna_nazwa_zgłoszenia>/   (jeden folder = jedno zgłoszenie)
-docker compose build && docker compose --profile pipeline run --rm pipeline && docker compose up app
+docker compose build                                   # pierwszy raz ok. 14 min (torch CPU + modele w obrazie)
+docker compose --profile pipeline run --rm pipeline    # ingest -> features -> correlate, kończy się sam
+docker compose up app                                  # interfejs: http://localhost:8501
 ```
 
 Katalog `./data` na hoście jest montowany w kontenerze jako `/app/data`. Aby użyć innego miejsca, zmień
-ścieżkę wolumenu `./data` w `docker-compose.yml`.
+ścieżkę wolumenu `./data` w `docker-compose.yml`. Krok `pipeline` uruchamiaj przez `run --rm`, a nie `up`:
+`up` z profilem `pipeline` startuje też `app` i nie kończy się po przetworzeniu danych.
 
 **b) pip** (Python 3.11 lub 3.12, po instalacji z sekcji niżej): jedna komenda wykonuje ingest, features,
 correlate i evaluate:
@@ -39,7 +43,14 @@ correlate i evaluate:
 ```bash
 python scripts/reference_run.py --data <folder_ze_zgłoszeniami>
 # wyniki trafiają do data/ albo do katalogu z DATA_DIR, np.:  DATA_DIR=/ścieżka/data_jury python scripts/reference_run.py --data ...
+streamlit run ui/app.py                                # interfejs: http://localhost:8501
 ```
+
+- **Modele już pobrane?** W świeżym klonie `data/models` jest puste, więc pierwszy przebieg pobierze ok. 1,1 GB.
+  Żeby użyć modeli z innej kopii repo, wskaż je zmienną `MODELS_DIR`, np. w PowerShell
+  `$env:MODELS_DIR="C:\ścieżka\do\data\models"`, w bash `MODELS_DIR=/ścieżka/do/data/models python scripts/reference_run.py --data ...`.
+- **Port 8501 zajęty** (np. przez kontener `app` albo drugą kopię UI)? Uruchom interfejs na innym porcie:
+  `streamlit run ui/app.py --server.port 8502` i otwórz http://localhost:8502.
 
 Bez `--data` skrypt bierze `data/raw/nask` (albo `DATA_DIR/raw/nask`). To samo krok po kroku:
 `python -m fakecollector ingest --data <folder>`, potem `features --module all`, `correlate`, `evaluate`.
@@ -56,7 +67,9 @@ RDAP, DNS i crt.sh dla nowych domen (bez kluczy API): `python -m fakecollector f
 `python scripts/reference_run.py --online` albo w Dockerze `OFFLINE=false docker compose --profile pipeline run --rm pipeline`.
 
 **e) Czas.** Pierwsze uruchomienie bez Dockera pobiera ok. **1,1 GB** modeli (w Dockerze są już w obrazie).
-Dalej ok. **1 do 2 s na zgłoszenie** bez wideo.
+Na CPU ok. **19 s na zgłoszenie z obrazami** (przebieg referencyjny: 10 zgłoszeń, 313 plików, ok. 3 min do `correlate`,
+ok. 3,7 min z `evaluate`) i ok. **0,3 s na zgłoszenie bez obrazów**. Najwięcej zajmuje CLIP, ok. 1 s na obraz, więc czas
+zależy głównie od liczby obrazów. Analiza jednego nowego materiału w UI trwa 11 do 23 s.
 
 ---
 
@@ -65,7 +78,7 @@ Dalej ok. **1 do 2 s na zgłoszenie** bez wideo.
 Wymagania: Docker z Compose v2.
 
 ```bash
-# 1. dane organizatora -> data/raw/nask/<N>/   (patrz "Struktura danych")
+# 1. dane organizatora -> data/raw/nask/<dowolna_nazwa_zgłoszenia>/   (patrz "Struktura danych")
 # 2. obraz (pierwszy build pobiera torch CPU i modele, kilkanaście minut)
 docker compose build
 
@@ -138,7 +151,7 @@ Konfiguracja: skopiuj `.env.example` do `.env`.
 
 ```
 data/                         # w .gitignore i .dockerignore - nigdy nie trafia do repo ani obrazu
-├── raw/nask/<N>/             # jeden folder = jeden incydent (1, 2, 3, 5, 10, 14, 36, 47, 48, 61)
+├── raw/nask/<dowolna_nazwa_zgłoszenia>/   # jeden folder = jeden incydent (w danych NASK: 1, 2, 3, 5, 10, 14, 36, 47, 48, 61)
 │   ├── *.html + *_files/     #   zapis "cała strona" z przeglądarki
 │   ├── *.har                 #   log ruchu sieciowego (uwaga: bywa nazwany po prostu ".har")
 │   ├── *.png / *.mp4         #   reklama, zrzuty ekranu, nagrania
@@ -150,7 +163,7 @@ data/                         # w .gitignore i .dockerignore - nigdy nie trafia 
 └── models/                   # wagi modeli (lokalnie; w Dockerze /models)
 ```
 
-Dane muszą leżeć dokładnie w `data/raw/nask/<N>/`, **bez** pośredniego folderu
+Dane muszą leżeć dokładnie w `data/raw/nask/<dowolna_nazwa_zgłoszenia>/`, **bez** pośredniego folderu
 (np. `do_udostępnienia/`), czyli tak jak w CONTRACTS.md v0.4.
 
 ---
@@ -184,6 +197,11 @@ i wiadomości commitów), więc przed publikacją wystarczy `--ref main`. `--com
 tylko wtedy, gdy udostępniamy całe repozytorium razem z historią.
 
 Moduły cech: `html_struct`, `text`, `visual`, `faces`, `infra` (lista po przecinku też działa).
+
+Interfejs: u góry **pasek zakładek** z pięcioma widokami (Kampanie i rodziny, Graf powiązań, Incydent, Analiza nowego materiału,
+Metodyka i wyniki), a po lewej **sidebar „Ustawienia widoku”** z przełącznikami „Tryb prezentacji” (większa treść na rzutnik),
+„Ukryj wiersze „brak: …”” i „Tryb publiczny” (maskuje domeny, identyfikatory i nazwy platform). Stan jest w adresie,
+np. `http://localhost:8501/?tab=graf&public=1&present=1` (`tab`: `kampanie`, `graf`, `incydent`, `analiza`, `metodyka`).
 
 Demonstrator nasłuchuje wyłącznie na `localhost` (`.streamlit/config.toml`: `server.address = "localhost"`), więc nie jest widoczny z sieci, do której podłączony jest laptop. Nie uruchamiaj go z `--server.address 0.0.0.0` poza kontenerem.
 
