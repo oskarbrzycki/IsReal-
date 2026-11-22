@@ -16,6 +16,36 @@ np. „wspólny piksel FB”, „domeny zarejestrowane w odstępie 108 s” albo
 
 ---
 
+## Słownik pojęć
+
+- **Zgłoszenie (incydent)**: jeden folder z materiałami jednego zgłoszenia, np. `data/raw/nask/47/`; to jednostka, którą grupujemy.
+- **Materiał**: pojedynczy plik w zgłoszeniu: zrzut reklamy, wideo, zapisana strona HTML, plik z jej folderu `_files`, log HAR, JSON.
+- **Cecha**: wartość wyciągnięta z materiału przez moduł cech (`html_struct`, `text`, `visual`, `faces`, `infra`), np. ID piksela, pHash obrazu, embedding twarzy.
+- **Sygnał**: porównanie jednej cechy między dwoma zgłoszeniami (wynik 0–1); ma klasę `campaign` (ślad tej samej akcji) albo `family` (wspólny zestaw narzędzi lub aktor).
+- **Twardy dowód**: sygnał, który sam wystarcza do połączenia w kampanię: wspólny piksel lub tag reklamowy, konto reklamowe, domena strony docelowej, identyczny plik strony.
+- **Kampania**: zgłoszenia połączone twardym dowodem (albo co najmniej dwoma różnymi sygnałami klasy `campaign`), czyli ta sama akcja oszusta.
+- **Kampania wieloincydentowa / pojedyncze zgłoszenie**: kampania z co najmniej dwoma zgłoszeniami / zgłoszenie, którego nie łączy z innymi żaden twardy ślad.
+- **Rodzina**: kampanie połączone poszlakami (sygnały klasy `family`: szablon linków, CSS, te same twarze), czyli prawdopodobnie ten sam oszust lub zestaw narzędzi.
+- **Przesłanka**: opis sygnału przy połączeniu, z podobieństwem i wagą, np. „wspólny piksel FB …5163, waga 3,5”.
+- **Reguła twardych dowodów**: bez twardego dowodu (albo dwóch różnych sygnałów `campaign`) nie łączymy w kampanię; takie połączenie zostaje najwyżej na poziomie rodziny.
+- **Nowa kampania**: wynik analizy nowego materiału, gdy żadne znane zgłoszenie nie pasuje powyżej progu (`tau_new` = 0,35).
+- **Tryb publiczny**: widok UI z maskowaniem domen, identyfikatorów i nazw platform, do zrzutów, nagrań i prezentacji.
+- **Tryb offline / online**: offline (domyślny) działa bez sieci, tylko na plikach i cache; online dodatkowo pyta publiczne usługi RDAP, DNS i crt.sh o nowe domeny.
+
+## Gdzie co jest
+
+| Co | Gdzie |
+|---|---|
+| Jak to działa: cechy, sygnały, wagi, reguła twardych dowodów, grupowanie | [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) |
+| Wyniki na danych NASK (przebieg referencyjny) | [`docs/RESULTS_SUMMARY.md`](docs/RESULTS_SUMMARY.md) |
+| Test na obcych danych (300 stron phishingowych) | [`docs/EXTERNAL_TEST.md`](docs/EXTERNAL_TEST.md) |
+| Wzorce kampanii znalezione w danych | [`docs/PATTERNS.md`](docs/PATTERNS.md) |
+| Biblioteki, modele i licencje | [`docs/LICENSES.md`](docs/LICENSES.md) |
+| Użycie narzędzi AI w projekcie | [`docs/AI_USAGE.md`](docs/AI_USAGE.md) |
+| Metryki i wagi sygnałów na żywo | zakładka „Metodyka i wyniki” w aplikacji |
+
+---
+
 ## Uruchomienie na własnych danych
 
 Chcesz sprawdzić narzędzie na **swoich** zgłoszeniach? Nazwy folderów mogą być dowolne
